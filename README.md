@@ -1,22 +1,21 @@
-# ECharts graph layout extension integrated with dagre.js
-
+# ECharts wordcloud extension based on wordcloud2.js
 
 ### Install
 
 ```html
 <script src="echarts.min.js"></script>
-<script src="echarts-dagre.min.js"></script>
+<script src="echarts-wordcloud.js"></script>
 ```
 
 Or
 
 ```
-npm install echarts-dagre
+npm install echarts-wordcloud
 ```
 
 ```js
 var echarts = require('echarts');
-require('echarts-dagre');
+require('echarts-wordcloud');
 ```
 
 ### Usage
@@ -28,11 +27,11 @@ require('echarts-dagre');
 chart.setOption({
     ...
     series: [{
-        type: 'graph',
-        // Change the layout to dagre, that's all you need to do.
-        layout: 'dagre',
-        nodes: [...],
-        links: [...]
+        type: 'wordCloud',
+        data: [{
+            name: 'Farrah Abraham',
+            value: 366
+        }]
     }]
 });
 ```
