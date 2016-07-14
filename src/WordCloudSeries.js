@@ -39,6 +39,8 @@ echarts.extendSeriesModel({
 
         rotationRange: [-90, 90],
 
+        rotationStep: 45,
+
         gridSize: 8,
 
         textStyle: {

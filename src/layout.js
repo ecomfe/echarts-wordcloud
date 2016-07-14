@@ -199,6 +199,7 @@ if (!window.clearImmediate) {
 
       minRotation: - Math.PI / 2,
       maxRotation: Math.PI / 2,
+      rotationStep: 0.1,
 
       shuffle: true,
       rotateRatio: 0.1,
@@ -317,6 +318,7 @@ if (!window.clearImmediate) {
     /* normalize rotation settings */
     var rotationRange = Math.abs(settings.maxRotation - settings.minRotation);
     var minRotation = Math.min(settings.maxRotation, settings.minRotation);
+    var rotationStep = settings.rotationStep;
 
     /* information/object available to all functions, set when start() */
     var grid, // 2d array containing filling information
@@ -474,7 +476,7 @@ if (!window.clearImmediate) {
         return minRotation;
       }
 
-      return minRotation + Math.random() * rotationRange;
+      return minRotation + Math.round(Math.random() * rotationRange / rotationStep) * rotationStep;
     };
 
     var getTextInfo = function getTextInfo(word, weight, rotateDeg) {
@@ -904,8 +906,8 @@ if (!window.clearImmediate) {
         }
 
         // Actually put the text on the canvas
-        // drawText(gx, gy, info, word, weight,
-        //          (maxRadius - r), gxy[2], rotateDeg, attributes);
+        drawText(gx, gy, info, word, weight,
+                 (maxRadius - r), gxy[2], rotateDeg, attributes);
 
         // Mark the spaces on the grid as filled
         updateGrid(gx, gy, gw, gh, info, item);

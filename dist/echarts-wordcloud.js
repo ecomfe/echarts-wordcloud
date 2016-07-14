@@ -161,7 +161,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	            minRotation: rotationRange[0] * DEGREE_TO_RAD,
 	            maxRotation: rotationRange[1] * DEGREE_TO_RAD,
 
-	            clearCanvas: !maskImage
+	            clearCanvas: !maskImage,
+
+	            rotateRatio: 1,
+
+	            rotationStep: seriesModel.get('rotationStep') * DEGREE_TO_RAD
 	        });
 
 	        canvas.addEventListener('wordclouddrawn', function (e) {
@@ -2171,6 +2175,8 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	        rotationRange: [-90, 90],
 
+	        rotationStep: 45,
+
 	        gridSize: 8,
 
 	        textStyle: {
@@ -2539,6 +2545,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	      minRotation: - Math.PI / 2,
 	      maxRotation: Math.PI / 2,
+	      rotationStep: 0.1,
 
 	      shuffle: true,
 	      rotateRatio: 0.1,
@@ -2657,6 +2664,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    /* normalize rotation settings */
 	    var rotationRange = Math.abs(settings.maxRotation - settings.minRotation);
 	    var minRotation = Math.min(settings.maxRotation, settings.minRotation);
+	    var rotationStep = settings.rotationStep;
 
 	    /* information/object available to all functions, set when start() */
 	    var grid, // 2d array containing filling information
@@ -2814,7 +2822,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        return minRotation;
 	      }
 
-	      return minRotation + Math.random() * rotationRange;
+	      return minRotation + Math.round(Math.random() * rotationRange / rotationStep) * rotationStep;
 	    };
 
 	    var getTextInfo = function getTextInfo(word, weight, rotateDeg) {
@@ -3244,8 +3252,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	        }
 
 	        // Actually put the text on the canvas
-	        // drawText(gx, gy, info, word, weight,
-	        //          (maxRadius - r), gxy[2], rotateDeg, attributes);
+	        drawText(gx, gy, info, word, weight,
+	                 (maxRadius - r), gxy[2], rotateDeg, attributes);
 
 	        // Mark the spaces on the grid as filled
 	        updateGrid(gx, gy, gw, gh, info, item);

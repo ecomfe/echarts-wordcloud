@@ -99,7 +99,11 @@ echarts.registerLayout(function (ecModel, api) {
             minRotation: rotationRange[0] * DEGREE_TO_RAD,
             maxRotation: rotationRange[1] * DEGREE_TO_RAD,
 
-            clearCanvas: !maskImage
+            clearCanvas: !maskImage,
+
+            rotateRatio: 1,
+
+            rotationStep: seriesModel.get('rotationStep') * DEGREE_TO_RAD
         });
 
         canvas.addEventListener('wordclouddrawn', function (e) {
