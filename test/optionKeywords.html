@@ -1,7 +1,7 @@
 <html>
     <head>
         <meta charset="utf-8">
-        <script src='https://cdn.bootcss.com/echarts/3.2.2/echarts.js'></script>
+        <script src='https://cdn.bootcss.com/echarts/3.2.2/echarts.simple.js'></script>
         <script src='../dist/echarts-wordcloud.js'></script>
     </head>
     <body>
@@ -388,7 +388,7 @@
                     },
                     data: data.sort(function (a, b) {
                         return b.value  - a.value;
-                    }).slice(0, 300)
+                    })
                 } ]
             };
 

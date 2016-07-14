@@ -85,6 +85,9 @@ echarts.registerLayout(function (ecModel, api) {
                         || echarts.number.linearMap(value, valueExtent, sizeRange),
                     idx
                 ];
+            }).sort(function (a, b) {
+                // Sort from large to small in case there is no more room for more words
+                return b[1] - a[1];
             }),
             fontFamily: seriesModel.get('textStyle.normal.fontFamily')
                 || seriesModel.get('textStyle.emphasis.fontFamily')
@@ -103,7 +106,11 @@ echarts.registerLayout(function (ecModel, api) {
 
             rotateRatio: 1,
 
-            rotationStep: seriesModel.get('rotationStep') * DEGREE_TO_RAD
+            rotationStep: seriesModel.get('rotationStep') * DEGREE_TO_RAD,
+
+            drawOutOfBound: false,
+
+            shuffle: false
         });
 
         canvas.addEventListener('wordclouddrawn', function (e) {

@@ -1,7 +1,7 @@
 <html>
     <head>
         <meta charset="utf-8">
-        <script src='https://cdn.bootcss.com/echarts/3.2.2/echarts.js'></script>
+        <script src='https://cdn.bootcss.com/echarts/3.2.2/echarts.simple.js'></script>
         <script src='../dist/echarts-wordcloud.js'></script>
     </head>
     <body>
@@ -21,8 +21,11 @@
                 series: [ {
                     type: 'wordCloud',
                     gridSize: 2,
-                    sizeRange: [12, 100],
-                    rotationRange: [0, 90],
+                    sizeRange: [12, 50],
+                    rotationRange: [-90, 90],
+                    shape: 'pentagon',
+                    width: 600,
+                    height: 400,
                     textStyle: {
                         normal: {
                             color: function () {
