@@ -6,7 +6,14 @@
 
 ![](./example/word-cloud.png)
 
-### Install
+
+## Examples
+
+[Google Trends](https://ecomfe.github.io/echarts-wordcloud/example/wordCloud.html)
+
+[ECharts Option Keywords](https://ecomfe.github.io/echarts-wordcloud/example/optionKeywords.html)
+
+## Install
 
 ```html
 <script src="echarts.min.js"></script>
@@ -15,7 +22,7 @@
 
 Or
 
-```
+```shell
 npm install echarts-wordcloud
 ```
 
@@ -24,7 +31,7 @@ var echarts = require('echarts');
 require('echarts-wordcloud');
 ```
 
-### Usage
+## Usage
 
 ```js
 var chart = echarts.init(document.getElementById('main'));
@@ -44,7 +51,7 @@ chart.setOption({
         // A silhouette image which the white area will be excluded from drawing texts.
         // The shape option will continue to apply as the shape of the cloud to grow.
 
-        maskImage: img,
+        maskImage: maskImage,
 
         // Folllowing left/top/width/height/right/bottom is used for positioning the area of word cloud
         // Default to be put in the center and has 75% x 80% size.
