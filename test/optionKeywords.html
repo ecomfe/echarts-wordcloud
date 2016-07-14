@@ -363,12 +363,17 @@
                     value: Math.sqrt(keywords[name])
                 })
             }
+
+            var maskImage = new Image();
+
             var option = {
-                tooltip: {},
                 series: [ {
                     type: 'wordCloud',
+                    sizeRange: [10, 100],
                     rotationRange: [0, 90],
                     gridSize: 2,
+                    shape: 'pentagon',
+                    maskImage: maskImage,
                     textStyle: {
                         normal: {
                             color: function () {
@@ -382,12 +387,16 @@
                     },
                     data: data.sort(function (a, b) {
                         return b.value  - a.value;
-                    }).slice(0, 200)
+                    }).slice(0, 300)
                 } ]
             };
 
-            chart.setOption(option);
+            maskImage.onload = function () {
+                option.series[0].maskImage
+                chart.setOption(option);
+            }
 
+            maskImage.src = './logo.png';
         </script>
     </body>
 </html>

@@ -49,6 +49,7 @@ echarts.extendChartView({
                     textBaseline: 'middle',
                     font: getFont(textStyleModel, emphasisTextStyleModel)
                 },
+                scale: [1 / drawn.info.mu, 1 / drawn.info.mu],
                 position: [
                     (drawn.gx + drawn.info.gw / 2) * gridSize,
                     (drawn.gy + drawn.info.gh / 2) * gridSize

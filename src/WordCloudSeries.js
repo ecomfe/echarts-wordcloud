@@ -19,11 +19,21 @@ echarts.extendSeriesModel({
         return list;
     },
 
+    // Most of options are from https://github.com/timdream/wordcloud2.js/blob/gh-pages/API.md
     defaultOption: {
 
         maskImage: null,
 
-        shape: '',
+        // Shape can be 'circle', 'cardioid', 'diamond', 'triangle-forward', 'triangle', 'pentagon', 'star'
+        shape: 'circle',
+
+        left: 'center',
+
+        top: 'center',
+
+        width: '70%',
+
+        height: '80%',
 
         sizeRange: [12, 60],
 

@@ -66,10 +66,43 @@ return /******/ (function(modules) { // webpackBootstrap
 	__webpack_require__(11);
 	__webpack_require__(13);
 
-	var WordCloud = __webpack_require__(14);
+	var wordCloudLayoutHelper = __webpack_require__(14);
 
-	if (!WordCloud.isSupported) {
+	if (!wordCloudLayoutHelper.isSupported) {
 	    throw new Error('Sorry your browser not support wordCloud');
+	}
+
+	// https://github.com/timdream/wordcloud2.js/blob/c236bee60436e048949f9becc4f0f67bd832dc5c/index.js#L233
+	function updateCanvasMask(maskCanvas) {
+	    var ctx = maskCanvas.getContext('2d');
+	    var imageData = ctx.getImageData(
+	        0, 0, maskCanvas.width, maskCanvas.height);
+	    var newImageData = ctx.createImageData(imageData);
+
+	    for (var i = 0; i < imageData.data.length; i += 4) {
+	        var tone = imageData.data[i] +
+	            imageData.data[i + 1] +
+	            imageData.data[i + 2];
+	        var alpha = imageData.data[i + 3];
+
+	        if (alpha < 128 || tone > 128 * 3) {
+	            // Area not to draw
+	            newImageData.data[i] = 0;
+	            newImageData.data[i + 1] = 0;
+	            newImageData.data[i + 2] = 0;
+	            newImageData.data[i + 3] = 0;
+	        }
+	        else {
+	            // Area to draw
+	            // The color must be same with backgroundColor
+	            newImageData.data[i] = 255;
+	            newImageData.data[i + 1] = 255;
+	            newImageData.data[i + 2] = 255;
+	            newImageData.data[i + 3] = 255;
+	        }
+	    }
+
+	    ctx.putImageData(newImageData, 0, 0);
 	}
 
 	echarts.registerLayout(function (ecModel, api) {
@@ -86,12 +119,26 @@ return /******/ (function(modules) { // webpackBootstrap
 	        canvas.width = gridRect.width;
 	        canvas.height = gridRect.height;
 
+	        var ctx = canvas.getContext('2d');
+	        var maskImage = seriesModel.get('maskImage');
+	        if (maskImage) {
+	            try {
+	                ctx.drawImage(maskImage, 0, 0, canvas.width, canvas.height);
+	                updateCanvasMask(canvas);
+	            }
+	            catch (e) {
+	                console.error('Invalid mask image');
+	                console.error(e.toString());
+	            }
+	        }
+
 	        var sizeRange = seriesModel.get('sizeRange');
 	        var rotationRange = seriesModel.get('rotationRange');
 	        var valueExtent = data.getDataExtent('value');
 
 	        var DEGREE_TO_RAD = Math.PI / 180;
-	        WordCloud(canvas, {
+	        var gridSize = seriesModel.get('gridSize');
+	        wordCloudLayoutHelper(canvas, {
 	            list: data.mapArray('value', function (value, idx) {
 	                var itemModel = data.getItemModel(idx);
 	                return [
@@ -107,15 +154,24 @@ return /******/ (function(modules) { // webpackBootstrap
 	            fontWeight: seriesModel.get('textStyle.normal.fontWeight')
 	                || seriesModel.get('textStyle.emphasis.fontWeight')
 	                || ecModel.get('textStyle.fontWeight'),
-	            gridSize: seriesModel.get('gridSize'),
+	            gridSize: gridSize,
+
+	            ellipticity: gridRect.height / gridRect.width,
+
 	            minRotation: rotationRange[0] * DEGREE_TO_RAD,
-	            maxRotation: rotationRange[1] * DEGREE_TO_RAD
+	            maxRotation: rotationRange[1] * DEGREE_TO_RAD,
+
+	            clearCanvas: !maskImage
 	        });
 
 	        canvas.addEventListener('wordclouddrawn', function (e) {
 	            var item = e.detail.item;
 	            if (e.detail.drawn && seriesModel.layoutInstance.ondraw) {
-	                seriesModel.layoutInstance.ondraw(item[0], item[1], item[2], e.detail.drawn);
+	                e.detail.drawn.gx += gridRect.x / gridSize;
+	                e.detail.drawn.gy += gridRect.y / gridSize;
+	                seriesModel.layoutInstance.ondraw(
+	                    item[0], item[1], item[2], e.detail.drawn
+	                );
 	            }
 	        });
 
@@ -2095,11 +2151,21 @@ return /******/ (function(modules) { // webpackBootstrap
 	        return list;
 	    },
 
+	    // Most of options are from https://github.com/timdream/wordcloud2.js/blob/gh-pages/API.md
 	    defaultOption: {
 
 	        maskImage: null,
 
-	        shape: '',
+	        // Shape can be 'circle', 'cardioid', 'diamond', 'triangle-forward', 'triangle', 'pentagon', 'star'
+	        shape: 'circle',
+
+	        left: 'center',
+
+	        top: 'center',
+
+	        width: '70%',
+
+	        height: '80%',
 
 	        sizeRange: [12, 60],
 
@@ -2240,6 +2306,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                    textBaseline: 'middle',
 	                    font: getFont(textStyleModel, emphasisTextStyleModel)
 	                },
+	                scale: [1 / drawn.info.mu, 1 / drawn.info.mu],
 	                position: [
 	                    (drawn.gx + drawn.info.gw / 2) * gridSize,
 	                    (drawn.gy + drawn.info.gh / 2) * gridSize
