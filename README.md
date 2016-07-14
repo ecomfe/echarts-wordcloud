@@ -78,10 +78,36 @@ chart.setOption({
 
         gridSize: 8,
 
-        // Data is an array. Each array item must has name and value property.
+        // Global text style
+        textStyle: {
+            normal: {
+                fontFamily: 'sans-serif',
+                fontWeight: 'bold',
+                // Color can be a callback function or a color string
+                color: function () {
+                    // Random color
+                    return 'rgb(' + [
+                        Math.round(Math.random() * 160),
+                        Math.round(Math.random() * 160),
+                        Math.round(Math.random() * 160)
+                    ].join(',') + ')';
+                }
+            },
+            emphasis: {
+                shadowBlur: 10,
+                shadowColor: '#333'
+            }
+        },
+
+        // Data is an array. Each array item must have name and value property.
         data: [{
             name: 'Farrah Abraham',
-            value: 366
+            value: 366,
+            // Style of single text
+            textStyle: {
+                normal: {},
+                emphasis: {}
+            }
         }]
     }]
 });
