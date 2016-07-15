@@ -106,7 +106,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 	echarts.registerLayout(function (ecModel, api) {
-	    ecModel.eachSeries(function (seriesModel) {
+	    ecModel.eachSeriesByType('wordCloud', function (seriesModel) {
 	        var gridRect = layoutUtil.getLayoutRect(
 	            seriesModel.getBoxLayoutParams(), {
 	                width: api.getWidth(),

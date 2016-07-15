@@ -53,7 +53,7 @@ chart.setOption({
 
         maskImage: maskImage,
 
-        // Folllowing left/top/width/height/right/bottom is used for positioning the area of word cloud
+        // Folllowing left/top/width/height/right/bottom are used for positioning the word cloud
         // Default to be put in the center and has 75% x 80% size.
 
         left: 'center',
