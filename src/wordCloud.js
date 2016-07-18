@@ -110,7 +110,9 @@ echarts.registerLayout(function (ecModel, api) {
 
             drawOutOfBound: false,
 
-            shuffle: false
+            shuffle: false,
+
+            shape: seriesModel.get('shape')
         });
 
         canvas.addEventListener('wordclouddrawn', function (e) {
