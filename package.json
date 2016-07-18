@@ -1,6 +1,6 @@
 {
   "name": "echarts-wordcloud",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "ECharts wordcloud extension based on wordcloud2.js",
   "main": "index.js",
   "author": "",

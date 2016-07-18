@@ -172,7 +172,9 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	            drawOutOfBound: false,
 
-	            shuffle: false
+	            shuffle: false,
+
+	            shape: seriesModel.get('shape')
 	        });
 
 	        canvas.addEventListener('wordclouddrawn', function (e) {
