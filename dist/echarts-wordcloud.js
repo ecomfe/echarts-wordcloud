@@ -105,6 +105,24 @@ return /******/ (function(modules) { // webpackBootstrap
 	    ctx.putImageData(newImageData, 0, 0);
 	}
 
+	/**
+	 * Mapping a value from domain to range using the function y=ax^p+b (p means power)
+	 * @param  {number} val
+	 * @param  {Array.<number>} domain Domain extent domain[1] is bigger than domain[0]
+	 * @param  {Array.<number>} range  Range extent range[1] is bigger than range[0]
+	 * @param  {number} power
+	 * @return {(number|Array.<number>}
+	 */
+	function valueMap(val, domain, range, power) {
+	    if(range[1] > range[0]){
+	        var a = (range[1] - range[0]) / (Math.pow(domain[1],power)-Math.pow(domain[0],power));
+	        var b = range[1] - a * Math.pow(domain[1],power);
+	        return Math.ceil(a*Math.pow(val,power)+b);
+	    }else{
+	        return range[0];
+	    }
+	};
+
 	echarts.registerLayout(function (ecModel, api) {
 	    ecModel.eachSeriesByType('wordCloud', function (seriesModel) {
 	        var gridRect = layoutUtil.getLayoutRect(
@@ -135,16 +153,23 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var sizeRange = seriesModel.get('sizeRange');
 	        var rotationRange = seriesModel.get('rotationRange');
 	        var valueExtent = data.getDataExtent('value');
+	        var sizeMapPower = seriesModel.get('sizeMapPower');
 
 	        var DEGREE_TO_RAD = Math.PI / 180;
 	        var gridSize = seriesModel.get('gridSize');
+
+	        //Fix origin(if precentage)
+	        var origin = seriesModel.get('origin');
+	        var x = /^\d+%$/.test(origin[0]) ? gridRect.width * parseInt(origin[0],10) / 100 : origin[0];
+	        var y = /^\d+%$/.test(origin[1]) ? gridRect.height * parseInt(origin[1],10) / 100 : origin[1];
+
 	        wordCloudLayoutHelper(canvas, {
 	            list: data.mapArray('value', function (value, idx) {
 	                var itemModel = data.getItemModel(idx);
 	                return [
 	                    data.getName(idx),
 	                    itemModel.get('textStyle.normal.textSize', true)
-	                        || echarts.number.linearMap(value, valueExtent, sizeRange),
+	                        || valueMap(value, valueExtent, sizeRange,sizeMapPower),
 	                    idx
 	                ];
 	            }).sort(function (a, b) {
@@ -159,22 +184,24 @@ return /******/ (function(modules) { // webpackBootstrap
 	                || ecModel.get('textStyle.fontWeight'),
 	            gridSize: gridSize,
 
-	            ellipticity: gridRect.height / gridRect.width,
+	            ellipticity: seriesModel.get('ellipticity'),
 
 	            minRotation: rotationRange[0] * DEGREE_TO_RAD,
 	            maxRotation: rotationRange[1] * DEGREE_TO_RAD,
 
 	            clearCanvas: !maskImage,
 
-	            rotateRatio: 1,
+	            rotateRatio: seriesModel.get('rotateRatio'),
 
 	            rotationStep: seriesModel.get('rotationStep') * DEGREE_TO_RAD,
 
 	            drawOutOfBound: false,
 
-	            shuffle: false,
+	            shuffle: seriesModel.get('shuffle'),
 
-	            shape: seriesModel.get('shape')
+	            shape: seriesModel.get('shape'),
+
+	            origin : [x,y]
 	        });
 
 	        canvas.addEventListener('wordclouddrawn', function (e) {
@@ -210,9 +237,9 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 	    var zrUtil = __webpack_require__(4);
-	    var BoundingRect = __webpack_require__(6);
-	    var numberUtil = __webpack_require__(9);
-	    var formatUtil = __webpack_require__(10);
+	    var BoundingRect = __webpack_require__(5);
+	    var numberUtil = __webpack_require__(8);
+	    var formatUtil = __webpack_require__(9);
 	    var parsePercent = numberUtil.parsePercent;
 	    var each = zrUtil.each;
 
@@ -482,10 +509,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	            positionInfo, containerRect, margin
 	        );
 
-	        group.position = [
+	        group.attr('position', [
 	            positionInfo.x - groupRect.x,
 	            positionInfo.y - groupRect.y
-	        ];
+	        ]);
 	    };
 
 	    /**
@@ -608,20 +635,23 @@ return /******/ (function(modules) { // webpackBootstrap
 
 /***/ },
 /* 4 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ function(module, exports) {
 
 	/**
 	 * @module zrender/core/util
 	 */
 
-	    var Gradient = __webpack_require__(5);
+
 	    // 用于处理merge时无法遍历Date等对象的问题
 	    var BUILTIN_OBJECT = {
 	        '[object Function]': 1,
 	        '[object RegExp]': 1,
 	        '[object Date]': 1,
 	        '[object Error]': 1,
-	        '[object CanvasGradient]': 1
+	        '[object CanvasGradient]': 1,
+	        '[object CanvasPattern]': 1,
+	        // In node-canvas Image can be Canvas.Image
+	        '[object Image]': 1
 	    };
 
 	    var objToString = Object.prototype.toString;
@@ -1018,8 +1048,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	     * @return {boolean}
 	     */
 	    function isBuildInObject(value) {
-	        return !!BUILTIN_OBJECT[objToString.call(value)]
-	            || (value instanceof Gradient);
+	        return !!BUILTIN_OBJECT[objToString.call(value)];
 	    }
 
 	    /**
@@ -1103,37 +1132,6 @@ return /******/ (function(modules) { // webpackBootstrap
 
 /***/ },
 /* 5 */
-/***/ function(module, exports) {
-
-	
-
-	    /**
-	     * @param {Array.<Object>} colorStops
-	     */
-	    var Gradient = function (colorStops) {
-
-	        this.colorStops = colorStops || [];
-	    };
-
-	    Gradient.prototype = {
-
-	        constructor: Gradient,
-
-	        addColorStop: function (offset, color) {
-	            this.colorStops.push({
-
-	                offset: offset,
-
-	                color: color
-	            });
-	        }
-	    };
-
-	    module.exports = Gradient;
-
-
-/***/ },
-/* 6 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1142,8 +1140,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	 */
 
 
-	    var vec2 = __webpack_require__(7);
-	    var matrix = __webpack_require__(8);
+	    var vec2 = __webpack_require__(6);
+	    var matrix = __webpack_require__(7);
 
 	    var v2ApplyTransform = vec2.applyTransform;
 	    var mathMin = Math.min;
@@ -1292,7 +1290,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 7 */
+/* 6 */
 /***/ function(module, exports) {
 
 	
@@ -1316,8 +1314,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	         */
 	        create: function (x, y) {
 	            var out = new ArrayCtor(2);
-	            out[0] = x || 0;
-	            out[1] = y || 0;
+	            if (x == null) {
+	                x = 0;
+	            }
+	            if (y == null) {
+	                y = 0;
+	            }
+	            out[0] = x;
+	            out[1] = y;
 	            return out;
 	        },
 
@@ -1572,7 +1576,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 8 */
+/* 7 */
 /***/ function(module, exports) {
 
 	
@@ -1736,7 +1740,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 9 */
+/* 8 */
 /***/ function(module, exports) {
 
 	/**
@@ -1864,6 +1868,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	     * @param {number} val
 	     */
 	    number.getPrecision = function (val) {
+	        val = +val;
 	        if (isNaN(val)) {
 	            return 0;
 	        }
@@ -1926,7 +1931,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	            ? value
 	            : new Date(
 	                typeof value === 'string'
-	                    ? value.replace(/-/g, '/')
+	                    // FIXME Date.parse('1970-01-01') is UTC, Date.parse('1970/01/01') is local
+	                    ? (new Date(value.replace(/-/g, '/')) - new Date('1970/01/01'))
 	                    : Math.round(value)
 	            );
 	    };
@@ -1973,13 +1979,14 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 10 */
+/* 9 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
 
 	    var zrUtil = __webpack_require__(4);
-	    var numberUtil = __webpack_require__(9);
+	    var numberUtil = __webpack_require__(8);
+	    var textContain = __webpack_require__(10);
 
 	    /**
 	     * 每三位默认加,格式化
@@ -2057,7 +2064,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            return '';
 	        }
 
-	        var $vars = paramsList[0].$vars;
+	        var $vars = paramsList[0].$vars || [];
 	        for (var i = 0; i < $vars.length; i++) {
 	            var alias = TPL_VAR_ALIAS[i];
 	            tpl = tpl.replace(wrapVar(alias),  wrapVar(alias, 0));
@@ -2135,8 +2142,291 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	        formatTpl: formatTpl,
 
-	        formatTime: formatTime
+	        formatTime: formatTime,
+
+	        truncateText: textContain.truncateText
 	    };
+
+
+/***/ },
+/* 10 */
+/***/ function(module, exports, __webpack_require__) {
+
+	
+
+	    var textWidthCache = {};
+	    var textWidthCacheCounter = 0;
+	    var TEXT_CACHE_MAX = 5000;
+
+	    var util = __webpack_require__(4);
+	    var BoundingRect = __webpack_require__(5);
+	    var retrieve = util.retrieve;
+
+	    function getTextWidth(text, textFont) {
+	        var key = text + ':' + textFont;
+	        if (textWidthCache[key]) {
+	            return textWidthCache[key];
+	        }
+
+	        var textLines = (text + '').split('\n');
+	        var width = 0;
+
+	        for (var i = 0, l = textLines.length; i < l; i++) {
+	            // measureText 可以被覆盖以兼容不支持 Canvas 的环境
+	            width = Math.max(textContain.measureText(textLines[i], textFont).width, width);
+	        }
+
+	        if (textWidthCacheCounter > TEXT_CACHE_MAX) {
+	            textWidthCacheCounter = 0;
+	            textWidthCache = {};
+	        }
+	        textWidthCacheCounter++;
+	        textWidthCache[key] = width;
+
+	        return width;
+	    }
+
+	    function getTextRect(text, textFont, textAlign, textBaseline) {
+	        var textLineLen = ((text || '') + '').split('\n').length;
+
+	        var width = getTextWidth(text, textFont);
+	        // FIXME 高度计算比较粗暴
+	        var lineHeight = getTextWidth('国', textFont);
+	        var height = textLineLen * lineHeight;
+
+	        var rect = new BoundingRect(0, 0, width, height);
+	        // Text has a special line height property
+	        rect.lineHeight = lineHeight;
+
+	        switch (textBaseline) {
+	            case 'bottom':
+	            case 'alphabetic':
+	                rect.y -= lineHeight;
+	                break;
+	            case 'middle':
+	                rect.y -= lineHeight / 2;
+	                break;
+	            // case 'hanging':
+	            // case 'top':
+	        }
+
+	        // FIXME Right to left language
+	        switch (textAlign) {
+	            case 'end':
+	            case 'right':
+	                rect.x -= rect.width;
+	                break;
+	            case 'center':
+	                rect.x -= rect.width / 2;
+	                break;
+	            // case 'start':
+	            // case 'left':
+	        }
+
+	        return rect;
+	    }
+
+	    function adjustTextPositionOnRect(textPosition, rect, textRect, distance) {
+
+	        var x = rect.x;
+	        var y = rect.y;
+
+	        var height = rect.height;
+	        var width = rect.width;
+
+	        var textHeight = textRect.height;
+
+	        var halfHeight = height / 2 - textHeight / 2;
+
+	        var textAlign = 'left';
+
+	        switch (textPosition) {
+	            case 'left':
+	                x -= distance;
+	                y += halfHeight;
+	                textAlign = 'right';
+	                break;
+	            case 'right':
+	                x += distance + width;
+	                y += halfHeight;
+	                textAlign = 'left';
+	                break;
+	            case 'top':
+	                x += width / 2;
+	                y -= distance + textHeight;
+	                textAlign = 'center';
+	                break;
+	            case 'bottom':
+	                x += width / 2;
+	                y += height + distance;
+	                textAlign = 'center';
+	                break;
+	            case 'inside':
+	                x += width / 2;
+	                y += halfHeight;
+	                textAlign = 'center';
+	                break;
+	            case 'insideLeft':
+	                x += distance;
+	                y += halfHeight;
+	                textAlign = 'left';
+	                break;
+	            case 'insideRight':
+	                x += width - distance;
+	                y += halfHeight;
+	                textAlign = 'right';
+	                break;
+	            case 'insideTop':
+	                x += width / 2;
+	                y += distance;
+	                textAlign = 'center';
+	                break;
+	            case 'insideBottom':
+	                x += width / 2;
+	                y += height - textHeight - distance;
+	                textAlign = 'center';
+	                break;
+	            case 'insideTopLeft':
+	                x += distance;
+	                y += distance;
+	                textAlign = 'left';
+	                break;
+	            case 'insideTopRight':
+	                x += width - distance;
+	                y += distance;
+	                textAlign = 'right';
+	                break;
+	            case 'insideBottomLeft':
+	                x += distance;
+	                y += height - textHeight - distance;
+	                break;
+	            case 'insideBottomRight':
+	                x += width - distance;
+	                y += height - textHeight - distance;
+	                textAlign = 'right';
+	                break;
+	        }
+
+	        return {
+	            x: x,
+	            y: y,
+	            textAlign: textAlign,
+	            textBaseline: 'top'
+	        };
+	    }
+
+	    /**
+	     * Show ellipsis if overflow.
+	     *
+	     * @param  {string} text
+	     * @param  {string} containerWidth
+	     * @param  {string} textFont
+	     * @param  {number} [ellipsis='...']
+	     * @param  {Object} [options]
+	     * @param  {number} [options.maxIterations=3]
+	     * @param  {number} [options.minChar=0] If truncate result are less
+	     *                  then minChar, ellipsis will not show, which is
+	     *                  better for user hint in some cases.
+	     * @param  {number} [options.placeholder=''] When all truncated, use the placeholder.
+	     * @return {string}
+	     */
+	    function truncateText(text, containerWidth, textFont, ellipsis, options) {
+	        if (!containerWidth) {
+	            return '';
+	        }
+
+	        options = options || {};
+
+	        ellipsis = retrieve(ellipsis, '...');
+	        var maxIterations = retrieve(options.maxIterations, 2);
+	        var minChar = retrieve(options.minChar, 0);
+	        // FIXME
+	        // Other languages?
+	        var cnCharWidth = getTextWidth('国', textFont);
+	        // FIXME
+	        // Consider proportional font?
+	        var ascCharWidth = getTextWidth('a', textFont);
+	        var placeholder = retrieve(options.placeholder, '');
+
+	        // Example 1: minChar: 3, text: 'asdfzxcv', truncate result: 'asdf', but not: 'a...'.
+	        // Example 2: minChar: 3, text: '维度', truncate result: '维', but not: '...'.
+	        var contentWidth = containerWidth = Math.max(0, containerWidth - 1); // Reserve some gap.
+	        for (var i = 0; i < minChar && contentWidth >= ascCharWidth; i++) {
+	            contentWidth -= ascCharWidth;
+	        }
+
+	        var ellipsisWidth = getTextWidth(ellipsis);
+	        if (ellipsisWidth > contentWidth) {
+	            ellipsis = '';
+	            ellipsisWidth = 0;
+	        }
+
+	        contentWidth = containerWidth - ellipsisWidth;
+
+	        var textLines = (text + '').split('\n');
+
+	        for (var i = 0, len = textLines.length; i < len; i++) {
+	            var textLine = textLines[i];
+	            var lineWidth = getTextWidth(textLine, textFont);
+
+	            if (lineWidth <= containerWidth) {
+	                continue;
+	            }
+
+	            for (var j = 0;; j++) {
+	                if (lineWidth <= contentWidth || j >= maxIterations) {
+	                    textLine += ellipsis;
+	                    break;
+	                }
+
+	                var subLength = j === 0
+	                    ? estimateLength(textLine, contentWidth, ascCharWidth, cnCharWidth)
+	                    : lineWidth > 0
+	                    ? Math.floor(textLine.length * contentWidth / lineWidth)
+	                    : 0;
+
+	                textLine = textLine.substr(0, subLength);
+	                lineWidth = getTextWidth(textLine, textFont);
+	            }
+
+	            if (textLine === '') {
+	                textLine = placeholder;
+	            }
+
+	            textLines[i] = textLine;
+	        }
+
+	        return textLines.join('\n');
+	    }
+
+	    function estimateLength(text, contentWidth, ascCharWidth, cnCharWidth) {
+	        var width = 0;
+	        var i = 0;
+	        for (var len = text.length; i < len && width < contentWidth; i++) {
+	            var charCode = text.charCodeAt(i);
+	            width += (0 <= charCode && charCode <= 127) ? ascCharWidth : cnCharWidth;
+	        }
+	        return i;
+	    }
+
+	    var textContain = {
+
+	        getWidth: getTextWidth,
+
+	        getBoundingRect: getTextRect,
+
+	        adjustTextPositionOnRect: adjustTextPositionOnRect,
+
+	        truncateText: truncateText,
+
+	        measureText: function (text, textFont) {
+	            var ctx = util.getContext();
+	            ctx.font = textFont || '12px sans-serif';
+	            return ctx.measureText(text);
+	        }
+	    };
+
+	    module.exports = textContain;
 
 
 /***/ },
@@ -2164,31 +2454,46 @@ return /******/ (function(modules) { // webpackBootstrap
 	        return list;
 	    },
 
-	    // Most of options are from https://github.com/timdream/wordcloud2.js/blob/gh-pages/API.md
+	    
 	    defaultOption: {
 
-	        maskImage: null,
+	        //Options below are from from https://github.com/timdream/wordcloud2.js/blob/gh-pages/API.md
 
-	        // Shape can be 'circle', 'cardioid', 'diamond', 'triangle-forward', 'triangle', 'pentagon', 'star'
-	        shape: 'circle',
+	        shape: 'circle', // Shape can be 'circle', 'cardioid', 'diamond', 'triangle-forward', 'triangle', 'pentagon', 'star'
+
+	        maskImage: null, //<img> with image loaded
+
+	        origin:['50%','50%'], //Origin of the “cloud” in [x, y] . x y can be percentage or value in px
+
+	        sizeRange: [12, 60],  //Text size range
+
+	        rotationRange: [-90, 90], 
+
+	        rotationStep: 45, 
+
+	        shuffle:false,
+
+	        rotateRatio:1,
+
+	        gridSize: 8,
+
+	        ellipticity :1,
+
+	        //Options below are added for convenient
+
+	        sizeMapPower: 1 ,    //Mapping text value to size by using formular y = a^p + b. p refer to sizeMapPower
+	        
+	        //Options below are from http://echarts.baidu.com/option.html 
 
 	        left: 'center',
 
 	        top: 'center',
 
-	        width: '70%',
+	        width: '100%',
 
-	        height: '80%',
+	        height: '100%',
 
-	        sizeRange: [12, 60],
-
-	        rotationRange: [-90, 90],
-
-	        rotationStep: 45,
-
-	        gridSize: 8,
-
-	        textStyle: {
+	        textStyle: {     
 	            normal: {
 	                fontWeight: 'normal'
 	            }
@@ -2239,7 +2544,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    // The rule should not be complex, otherwise user might not
 	    // be able to known where the data is wrong.
-	    function guessOrdinal(data, dimIndex) {
+	    var guessOrdinal = completeDimensions.guessOrdinal = function (data, dimIndex) {
 	        for (var i = 0, len = data.length; i < len; i++) {
 	            var value = retrieveValue(data[i]);
 
@@ -2256,7 +2561,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            }
 	        }
 	        return false;
-	    }
+	    };
 
 	    function retrieveValue(o) {
 	        return zrUtil.isArray(o) ? o : zrUtil.isObject(o) ? o.value: o;
@@ -2330,11 +2635,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	            });
 
 	            text.setStyle(textStyleModel.getItemStyle());
+
 	            text.setStyle({
 	                fill: data.getItemVisual(dataIdx, 'color')
 	            });
 
-	            group.add(text);
+	            try{
+	                group.add(text);
+	            }catch(err){
+	                window.console && console.log(err);
+	            }
 
 	            data.setItemGraphicEl(dataIdx, text);
 	            echarts.graphic.setHoverStyle(

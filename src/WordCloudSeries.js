@@ -19,31 +19,46 @@ echarts.extendSeriesModel({
         return list;
     },
 
-    // Most of options are from https://github.com/timdream/wordcloud2.js/blob/gh-pages/API.md
+    
     defaultOption: {
 
-        maskImage: null,
+        //Options below are from from https://github.com/timdream/wordcloud2.js/blob/gh-pages/API.md
 
-        // Shape can be 'circle', 'cardioid', 'diamond', 'triangle-forward', 'triangle', 'pentagon', 'star'
-        shape: 'circle',
+        shape: 'circle', // Shape can be 'circle', 'cardioid', 'diamond', 'triangle-forward', 'triangle', 'pentagon', 'star'
+
+        maskImage: null, //<img> with image loaded
+
+        origin:['50%','50%'], //Origin of the “cloud” in [x, y] . x y can be percentage or value in px
+
+        sizeRange: [12, 60],  //Text size range
+
+        rotationRange: [-90, 90], 
+
+        rotationStep: 45, 
+
+        shuffle:false,
+
+        rotateRatio:1,
+
+        gridSize: 8,
+
+        ellipticity :1,
+
+        //Options below are added for convenient
+
+        sizeMapPower: 1 ,    //Mapping text value to size by using formular y = a^p + b. p refer to sizeMapPower
+        
+        //Options below are from http://echarts.baidu.com/option.html 
 
         left: 'center',
 
         top: 'center',
 
-        width: '70%',
+        width: '100%',
 
-        height: '80%',
+        height: '100%',
 
-        sizeRange: [12, 60],
-
-        rotationRange: [-90, 90],
-
-        rotationStep: 45,
-
-        gridSize: 8,
-
-        textStyle: {
+        textStyle: {     
             normal: {
                 fontWeight: 'normal'
             }

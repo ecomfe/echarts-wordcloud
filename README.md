@@ -53,6 +53,8 @@ chart.setOption({
 
         maskImage: maskImage,
 
+        ellipticity :1,
+
         // Folllowing left/top/width/height/right/bottom are used for positioning the word cloud
         // Default to be put in the center and has 75% x 80% size.
 
@@ -63,15 +65,22 @@ chart.setOption({
         right: null,
         bottom: null,
 
+        //Origin of the “cloud” in [x, y] . x y can be percentage or value in px
+        origin:['50%','50%'], 
+
         // Text size range which the value in data will be mapped to.
         // Default to have minimum 12px and maximum 60px size.
 
         sizeRange: [12, 60],
 
+         //Mapping text value to size by using formular y = a^p + b. p refer to sizeMapPower
+        sizeMapPower: 1 ,   
+
         // Text rotation range and step in degree. Text will be rotated randomly in range [-90, 90] by rotationStep 45
 
         rotationRange: [-90, 90],
         rotationStep: 45,
+        rotateRatio:1,
 
         // size of the grid in pixels for marking the availability of the canvas
         // the larger the grid size, the bigger the gap between words.
