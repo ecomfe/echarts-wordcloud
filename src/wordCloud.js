@@ -52,7 +52,7 @@ function updateCanvasMask(maskCanvas) {
  * @return {(number|Array.<number>}
  */
 function valueMap(val, domain, range, power) {
-    if(range[1] > range[0]){
+    if(domain[1] > domain[0]){
         var a = (range[1] - range[0]) / (Math.pow(domain[1],power)-Math.pow(domain[0],power));
         var b = range[1] - a * Math.pow(domain[1],power);
         return Math.ceil(a*Math.pow(val,power)+b);
