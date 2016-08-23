@@ -58,11 +58,16 @@ echarts.extendChartView({
             });
 
             text.setStyle(textStyleModel.getItemStyle());
+
             text.setStyle({
                 fill: data.getItemVisual(dataIdx, 'color')
             });
 
-            group.add(text);
+            try{
+                group.add(text);
+            }catch(err){
+                window.console && console.log(err);
+            }
 
             data.setItemGraphicEl(dataIdx, text);
             echarts.graphic.setHoverStyle(

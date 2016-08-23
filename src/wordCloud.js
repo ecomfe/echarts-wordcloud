@@ -43,6 +43,24 @@ function updateCanvasMask(maskCanvas) {
     ctx.putImageData(newImageData, 0, 0);
 }
 
+/**
+ * Mapping a value from domain to range using the function y=ax^p+b (p means power)
+ * @param  {number} val
+ * @param  {Array.<number>} domain Domain extent domain[1] is bigger than domain[0]
+ * @param  {Array.<number>} range  Range extent range[1] is bigger than range[0]
+ * @param  {number} power
+ * @return {(number|Array.<number>}
+ */
+function valueMap(val, domain, range, power) {
+    if(domain[1] > domain[0]){
+        var a = (range[1] - range[0]) / (Math.pow(domain[1],power)-Math.pow(domain[0],power));
+        var b = range[1] - a * Math.pow(domain[1],power);
+        return Math.ceil(a*Math.pow(val,power)+b);
+    }else{
+        return range[0];
+    }
+};
+
 echarts.registerLayout(function (ecModel, api) {
     ecModel.eachSeriesByType('wordCloud', function (seriesModel) {
         var gridRect = layoutUtil.getLayoutRect(
@@ -73,16 +91,23 @@ echarts.registerLayout(function (ecModel, api) {
         var sizeRange = seriesModel.get('sizeRange');
         var rotationRange = seriesModel.get('rotationRange');
         var valueExtent = data.getDataExtent('value');
+        var sizeMapPower = seriesModel.get('sizeMapPower');
 
         var DEGREE_TO_RAD = Math.PI / 180;
         var gridSize = seriesModel.get('gridSize');
+
+        //Fix origin(if precentage)
+        var origin = seriesModel.get('origin');
+        var x = /^\d+%$/.test(origin[0]) ? gridRect.width * parseInt(origin[0],10) / 100 : origin[0];
+        var y = /^\d+%$/.test(origin[1]) ? gridRect.height * parseInt(origin[1],10) / 100 : origin[1];
+
         wordCloudLayoutHelper(canvas, {
             list: data.mapArray('value', function (value, idx) {
                 var itemModel = data.getItemModel(idx);
                 return [
                     data.getName(idx),
                     itemModel.get('textStyle.normal.textSize', true)
-                        || echarts.number.linearMap(value, valueExtent, sizeRange),
+                        || valueMap(value, valueExtent, sizeRange,sizeMapPower),
                     idx
                 ];
             }).sort(function (a, b) {
@@ -97,22 +122,24 @@ echarts.registerLayout(function (ecModel, api) {
                 || ecModel.get('textStyle.fontWeight'),
             gridSize: gridSize,
 
-            ellipticity: gridRect.height / gridRect.width,
+            ellipticity: seriesModel.get('ellipticity'),
 
             minRotation: rotationRange[0] * DEGREE_TO_RAD,
             maxRotation: rotationRange[1] * DEGREE_TO_RAD,
 
             clearCanvas: !maskImage,
 
-            rotateRatio: 1,
+            rotateRatio: seriesModel.get('rotateRatio'),
 
             rotationStep: seriesModel.get('rotationStep') * DEGREE_TO_RAD,
 
             drawOutOfBound: false,
 
-            shuffle: false,
+            shuffle: seriesModel.get('shuffle'),
 
-            shape: seriesModel.get('shape')
+            shape: seriesModel.get('shape'),
+
+            origin : [x,y]
         });
 
         canvas.addEventListener('wordclouddrawn', function (e) {
