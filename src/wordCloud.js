@@ -115,7 +115,7 @@ echarts.registerLayout(function (ecModel, api) {
             shape: seriesModel.get('shape')
         });
 
-        canvas.addEventListener('wordclouddrawn', function (e) {
+        function onWordCloudDrawn(e) {
             var item = e.detail.item;
             if (e.detail.drawn && seriesModel.layoutInstance.ondraw) {
                 e.detail.drawn.gx += gridRect.x / gridSize;
@@ -124,10 +124,21 @@ echarts.registerLayout(function (ecModel, api) {
                     item[0], item[1], item[2], e.detail.drawn
                 );
             }
-        });
+        }
+
+        canvas.addEventListener('wordclouddrawn', onWordCloudDrawn);
+
+        if (seriesModel.layoutInstance) {
+            // Dispose previous
+            seriesModel.layoutInstance.dispose();
+        }
 
         seriesModel.layoutInstance = {
-            ondraw: null
+            ondraw: null,
+
+            dispose: function () {
+                canvas.removeEventListener('wordclouddrawn', onWordCloudDrawn);
+            }
         };
     });
 });

@@ -58,6 +58,7 @@ echarts.extendChartView({
             });
 
             text.setStyle(textStyleModel.getItemStyle());
+
             text.setStyle({
                 fill: data.getItemVisual(dataIdx, 'color')
             });
@@ -74,5 +75,17 @@ echarts.extendChartView({
                 )
             );
         };
+
+        this._model = seriesModel;
+    },
+
+    remove: function () {
+        this.group.removeAll();
+
+        this._model.layoutInstance.dispose();
+    },
+
+    dispose: function () {
+        this._model.layoutInstance.dispose();
     }
 });
