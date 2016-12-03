@@ -177,7 +177,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            shape: seriesModel.get('shape')
 	        });
 
-	        canvas.addEventListener('wordclouddrawn', function (e) {
+	        function onWordCloudDrawn(e) {
 	            var item = e.detail.item;
 	            if (e.detail.drawn && seriesModel.layoutInstance.ondraw) {
 	                e.detail.drawn.gx += gridRect.x / gridSize;
@@ -186,10 +186,21 @@ return /******/ (function(modules) { // webpackBootstrap
 	                    item[0], item[1], item[2], e.detail.drawn
 	                );
 	            }
-	        });
+	        }
+
+	        canvas.addEventListener('wordclouddrawn', onWordCloudDrawn);
+
+	        if (seriesModel.layoutInstance) {
+	            // Dispose previous
+	            seriesModel.layoutInstance.dispose();
+	        }
 
 	        seriesModel.layoutInstance = {
-	            ondraw: null
+	            ondraw: null,
+
+	            dispose: function () {
+	                canvas.removeEventListener('wordclouddrawn', onWordCloudDrawn);
+	            }
 	        };
 	    });
 	});
@@ -2330,6 +2341,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            });
 
 	            text.setStyle(textStyleModel.getItemStyle());
+
 	            text.setStyle({
 	                fill: data.getItemVisual(dataIdx, 'color')
 	            });
@@ -2346,6 +2358,18 @@ return /******/ (function(modules) { // webpackBootstrap
 	                )
 	            );
 	        };
+
+	        this._model = seriesModel;
+	    },
+
+	    remove: function () {
+	        this.group.removeAll();
+
+	        this._model.layoutInstance.dispose();
+	    },
+
+	    dispose: function () {
+	        this._model.layoutInstance.dispose();
 	    }
 	});
 
