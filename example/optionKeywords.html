@@ -398,6 +398,11 @@
             }
 
             maskImage.src = './logo.png';
+
+            window.onresize = function () {
+                chart.resize();
+            }
+
         </script>
     </body>
 </html>

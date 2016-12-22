@@ -138,6 +138,11 @@ echarts.registerLayout(function (ecModel, api) {
 
             dispose: function () {
                 canvas.removeEventListener('wordclouddrawn', onWordCloudDrawn);
+                // Abort
+                canvas.addEventListener('wordclouddrawn', function (e) {
+                    // Prevent default to cancle the event and stop the loop
+                    e.preventDefault();
+                });
             }
         };
     });
