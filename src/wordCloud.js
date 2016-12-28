@@ -17,13 +17,27 @@ function updateCanvasMask(maskCanvas) {
         0, 0, maskCanvas.width, maskCanvas.height);
     var newImageData = ctx.createImageData(imageData);
 
+    var toneSum = 0;
+    var toneCnt = 0;
     for (var i = 0; i < imageData.data.length; i += 4) {
-        var tone = imageData.data[i] +
-            imageData.data[i + 1] +
-            imageData.data[i + 2];
+        var alpha = imageData.data[i + 3];
+        if (alpha > 128) {
+            var tone = imageData.data[i]
+                + imageData.data[i + 1]
+                + imageData.data[i + 2];
+            toneSum += tone;
+            ++toneCnt;
+        }
+    }
+    var threshold = toneSum / toneCnt;
+
+    for (var i = 0; i < imageData.data.length; i += 4) {
+        var tone = imageData.data[i]
+            + imageData.data[i + 1]
+            + imageData.data[i + 2];
         var alpha = imageData.data[i + 3];
 
-        if (alpha < 128 || tone > 128 * 3) {
+        if (alpha < 128 || tone > threshold) {
             // Area not to draw
             newImageData.data[i] = 0;
             newImageData.data[i + 1] = 0;
@@ -41,6 +55,7 @@ function updateCanvasMask(maskCanvas) {
     }
 
     ctx.putImageData(newImageData, 0, 0);
+    console.log(maskCanvas.toDataURL());
 }
 
 echarts.registerLayout(function (ecModel, api) {

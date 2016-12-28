@@ -79,13 +79,27 @@ return /******/ (function(modules) { // webpackBootstrap
 	        0, 0, maskCanvas.width, maskCanvas.height);
 	    var newImageData = ctx.createImageData(imageData);
 
+	    var toneSum = 0;
+	    var toneCnt = 0;
 	    for (var i = 0; i < imageData.data.length; i += 4) {
-	        var tone = imageData.data[i] +
-	            imageData.data[i + 1] +
-	            imageData.data[i + 2];
+	        var alpha = imageData.data[i + 3];
+	        if (alpha > 128) {
+	            var tone = imageData.data[i]
+	                + imageData.data[i + 1]
+	                + imageData.data[i + 2];
+	            toneSum += tone;
+	            ++toneCnt;
+	        }
+	    }
+	    var threshold = toneSum / toneCnt;
+
+	    for (var i = 0; i < imageData.data.length; i += 4) {
+	        var tone = imageData.data[i]
+	            + imageData.data[i + 1]
+	            + imageData.data[i + 2];
 	        var alpha = imageData.data[i + 3];
 
-	        if (alpha < 128 || tone > 128 * 3) {
+	        if (alpha < 128 || tone > threshold) {
 	            // Area not to draw
 	            newImageData.data[i] = 0;
 	            newImageData.data[i + 1] = 0;
@@ -103,6 +117,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 
 	    ctx.putImageData(newImageData, 0, 0);
+	    console.log(maskCanvas.toDataURL());
 	}
 
 	echarts.registerLayout(function (ecModel, api) {
@@ -200,6 +215,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	            dispose: function () {
 	                canvas.removeEventListener('wordclouddrawn', onWordCloudDrawn);
+	                // Abort
+	                canvas.addEventListener('wordclouddrawn', function (e) {
+	                    // Prevent default to cancle the event and stop the loop
+	                    e.preventDefault();
+	                });
 	            }
 	        };
 	    });
@@ -221,15 +241,17 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 	    var zrUtil = __webpack_require__(4);
-	    var BoundingRect = __webpack_require__(6);
-	    var numberUtil = __webpack_require__(9);
-	    var formatUtil = __webpack_require__(10);
+	    var BoundingRect = __webpack_require__(5);
+	    var numberUtil = __webpack_require__(8);
+	    var formatUtil = __webpack_require__(9);
 	    var parsePercent = numberUtil.parsePercent;
 	    var each = zrUtil.each;
 
 	    var layout = {};
 
-	    var LOCATION_PARAMS = ['left', 'right', 'top', 'bottom', 'width', 'height'];
+	    var LOCATION_PARAMS = layout.LOCATION_PARAMS = [
+	        'left', 'right', 'top', 'bottom', 'width', 'height'
+	    ];
 
 	    function boxLayout(orient, group, gap, maxWidth, maxHeight) {
 	        var x = 0;
@@ -464,13 +486,23 @@ return /******/ (function(modules) { // webpackBootstrap
 	        return rect;
 	    };
 
+
 	    /**
-	     * Position group of component in viewport
+	     * Position a zr element in viewport
 	     *  Group position is specified by either
 	     *  {left, top}, {right, bottom}
 	     *  If all properties exists, right and bottom will be igonred.
 	     *
-	     * @param {module:zrender/container/Group} group
+	     * Logic:
+	     *     1. Scale (against origin point in parent coord)
+	     *     2. Rotate (against origin point in parent coord)
+	     *     3. Traslate (with el.position by this method)
+	     * So this method only fixes the last step 'Traslate', which does not affect
+	     * scaling and rotating.
+	     *
+	     * If be called repeatly with the same input el, the same result will be gotten.
+	     *
+	     * @param {module:zrender/Element} el Should have `getBoundingRect` method.
 	     * @param {Object} positionInfo
 	     * @param {number|string} [positionInfo.left]
 	     * @param {number|string} [positionInfo.top]
@@ -478,25 +510,62 @@ return /******/ (function(modules) { // webpackBootstrap
 	     * @param {number|string} [positionInfo.bottom]
 	     * @param {Object} containerRect
 	     * @param {string|number} margin
+	     * @param {Object} [opt]
+	     * @param {Array.<number>} [opt.hv=[1,1]] Only horizontal or only vertical.
+	     * @param {Array.<number>} [opt.boundingMode='all']
+	     *        Specify how to calculate boundingRect when locating.
+	     *        'all': Position the boundingRect that is transformed and uioned
+	     *               both itself and its descendants.
+	     *               This mode simplies confine the elements in the bounding
+	     *               of their container (e.g., using 'right: 0').
+	     *        'raw': Position the boundingRect that is not transformed and only itself.
+	     *               This mode is useful when you want a element can overflow its
+	     *               container. (Consider a rotated circle needs to be located in a corner.)
+	     *               In this mode positionInfo.width/height can only be number.
 	     */
-	    layout.positionGroup = function (
-	        group, positionInfo, containerRect, margin
-	    ) {
-	        var groupRect = group.getBoundingRect();
+	    layout.positionElement = function (el, positionInfo, containerRect, margin, opt) {
+	        var h = !opt || !opt.hv || opt.hv[0];
+	        var v = !opt || !opt.hv || opt.hv[1];
+	        var boundingMode = opt && opt.boundingMode || 'all';
 
-	        positionInfo = zrUtil.extend(zrUtil.clone(positionInfo), {
-	            width: groupRect.width,
-	            height: groupRect.height
-	        });
+	        if (!h && !v) {
+	            return;
+	        }
+
+	        var rect;
+	        if (boundingMode === 'raw') {
+	            rect = el.type === 'group'
+	                ? new BoundingRect(0, 0, +positionInfo.width || 0, +positionInfo.height || 0)
+	                : el.getBoundingRect();
+	        }
+	        else {
+	            rect = el.getBoundingRect();
+	            if (el.needLocalTransform()) {
+	                var transform = el.getLocalTransform();
+	                // Notice: raw rect may be inner object of el,
+	                // which should not be modified.
+	                rect = rect.clone();
+	                rect.applyTransform(transform);
+	            }
+	        }
 
 	        positionInfo = layout.getLayoutRect(
-	            positionInfo, containerRect, margin
+	            zrUtil.defaults(
+	                {width: rect.width, height: rect.height},
+	                positionInfo
+	            ),
+	            containerRect,
+	            margin
 	        );
 
-	        group.position = [
-	            positionInfo.x - groupRect.x,
-	            positionInfo.y - groupRect.y
-	        ];
+	        // Because 'tranlate' is the last step in transform
+	        // (see zrender/core/Transformable#getLocalTransfrom),
+	        // we can just only modify el.position to get final result.
+	        var elPos = el.position;
+	        var dx = h ? positionInfo.x - rect.x : 0;
+	        var dy = v ? positionInfo.y - rect.y : 0;
+
+	        el.attr('position', boundingMode === 'raw' ? [dx, dy] : [elPos[0] + dx, elPos[1] + dy]);
 	    };
 
 	    /**
@@ -619,20 +688,36 @@ return /******/ (function(modules) { // webpackBootstrap
 
 /***/ },
 /* 4 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ function(module, exports) {
 
 	/**
 	 * @module zrender/core/util
 	 */
 
-	    var Gradient = __webpack_require__(5);
+
 	    // 用于处理merge时无法遍历Date等对象的问题
 	    var BUILTIN_OBJECT = {
 	        '[object Function]': 1,
 	        '[object RegExp]': 1,
 	        '[object Date]': 1,
 	        '[object Error]': 1,
-	        '[object CanvasGradient]': 1
+	        '[object CanvasGradient]': 1,
+	        '[object CanvasPattern]': 1,
+	        // For node-canvas
+	        '[object Image]': 1,
+	        '[object Canvas]': 1
+	    };
+
+	    var TYPED_ARRAY = {
+	        '[object Int8Array]': 1,
+	        '[object Uint8Array]': 1,
+	        '[object Uint8ClampedArray]': 1,
+	        '[object Int16Array]': 1,
+	        '[object Uint16Array]': 1,
+	        '[object Int32Array]': 1,
+	        '[object Uint32Array]': 1,
+	        '[object Float32Array]': 1,
+	        '[object Float64Array]': 1
 	    };
 
 	    var objToString = Object.prototype.toString;
@@ -645,35 +730,48 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var nativeReduce = arrayProto.reduce;
 
 	    /**
+	     * Those data types can be cloned:
+	     *     Plain object, Array, TypedArray, number, string, null, undefined.
+	     * Those data types will be assgined using the orginal data:
+	     *     BUILTIN_OBJECT
+	     * Instance of user defined class will be cloned to a plain object, without
+	     * properties in prototype.
+	     * Other data types is not supported (not sure what will happen).
+	     *
+	     * Caution: do not support clone Date, for performance consideration.
+	     * (There might be a large number of date in `series.data`).
+	     * So date should not be modified in and out of echarts.
+	     *
 	     * @param {*} source
-	     * @return {*} 拷贝后的新对象
+	     * @return {*} new
 	     */
 	    function clone(source) {
-	        if (typeof source == 'object' && source !== null) {
-	            var result = source;
-	            if (source instanceof Array) {
-	                result = [];
-	                for (var i = 0, len = source.length; i < len; i++) {
-	                    result[i] = clone(source[i]);
-	                }
-	            }
-	            else if (
-	                !isBuildInObject(source)
-	                // 是否为 dom 对象
-	                && !isDom(source)
-	            ) {
-	                result = {};
-	                for (var key in source) {
-	                    if (source.hasOwnProperty(key)) {
-	                        result[key] = clone(source[key]);
-	                    }
-	                }
-	            }
-
-	            return result;
+	        if (source == null || typeof source != 'object') {
+	            return source;
 	        }
 
-	        return source;
+	        var result = source;
+	        var typeStr = objToString.call(source);
+
+	        if (typeStr === '[object Array]') {
+	            result = [];
+	            for (var i = 0, len = source.length; i < len; i++) {
+	                result[i] = clone(source[i]);
+	            }
+	        }
+	        else if (TYPED_ARRAY[typeStr]) {
+	            result = source.constructor.from(source);
+	        }
+	        else if (!BUILTIN_OBJECT[typeStr] && !isDom(source)) {
+	            result = {};
+	            for (var key in source) {
+	                if (source.hasOwnProperty(key)) {
+	                    result[key] = clone(source[key]);
+	                }
+	            }
+	        }
+
+	        return result;
 	    }
 
 	    /**
@@ -1029,8 +1127,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	     * @return {boolean}
 	     */
 	    function isBuildInObject(value) {
-	        return !!BUILTIN_OBJECT[objToString.call(value)]
-	            || (value instanceof Gradient);
+	        return !!BUILTIN_OBJECT[objToString.call(value)];
 	    }
 
 	    /**
@@ -1039,8 +1136,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	     * @return {boolean}
 	     */
 	    function isDom(value) {
-	        return value && value.nodeType === 1
-	               && typeof(value.nodeName) == 'string';
+	        return typeof value === 'object'
+	            && typeof value.nodeType === 'number'
+	            && typeof value.ownerDocument === 'object';
 	    }
 
 	    /**
@@ -1114,37 +1212,6 @@ return /******/ (function(modules) { // webpackBootstrap
 
 /***/ },
 /* 5 */
-/***/ function(module, exports) {
-
-	
-
-	    /**
-	     * @param {Array.<Object>} colorStops
-	     */
-	    var Gradient = function (colorStops) {
-
-	        this.colorStops = colorStops || [];
-	    };
-
-	    Gradient.prototype = {
-
-	        constructor: Gradient,
-
-	        addColorStop: function (offset, color) {
-	            this.colorStops.push({
-
-	                offset: offset,
-
-	                color: color
-	            });
-	        }
-	    };
-
-	    module.exports = Gradient;
-
-
-/***/ },
-/* 6 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1153,17 +1220,26 @@ return /******/ (function(modules) { // webpackBootstrap
 	 */
 
 
-	    var vec2 = __webpack_require__(7);
-	    var matrix = __webpack_require__(8);
+	    var vec2 = __webpack_require__(6);
+	    var matrix = __webpack_require__(7);
 
 	    var v2ApplyTransform = vec2.applyTransform;
 	    var mathMin = Math.min;
-	    var mathAbs = Math.abs;
 	    var mathMax = Math.max;
 	    /**
 	     * @alias module:echarts/core/BoundingRect
 	     */
 	    function BoundingRect(x, y, width, height) {
+
+	        if (width < 0) {
+	            x = x + width;
+	            width = -width;
+	        }
+	        if (height < 0) {
+	            y = y + height;
+	            height = -height;
+	        }
+
 	        /**
 	         * @type {number}
 	         */
@@ -1210,8 +1286,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	         * @methods
 	         */
 	        applyTransform: (function () {
-	            var min = [];
-	            var max = [];
+	            var lt = [];
+	            var rb = [];
+	            var lb = [];
+	            var rt = [];
 	            return function (m) {
 	                // In case usage like this
 	                // el.getBoundingRect().applyTransform(el.transform)
@@ -1219,18 +1297,22 @@ return /******/ (function(modules) { // webpackBootstrap
 	                if (!m) {
 	                    return;
 	                }
-	                min[0] = this.x;
-	                min[1] = this.y;
-	                max[0] = this.x + this.width;
-	                max[1] = this.y + this.height;
+	                lt[0] = lb[0] = this.x;
+	                lt[1] = rt[1] = this.y;
+	                rb[0] = rt[0] = this.x + this.width;
+	                rb[1] = lb[1] = this.y + this.height;
 
-	                v2ApplyTransform(min, min, m);
-	                v2ApplyTransform(max, max, m);
+	                v2ApplyTransform(lt, lt, m);
+	                v2ApplyTransform(rb, rb, m);
+	                v2ApplyTransform(lb, lb, m);
+	                v2ApplyTransform(rt, rt, m);
 
-	                this.x = mathMin(min[0], max[0]);
-	                this.y = mathMin(min[1], max[1]);
-	                this.width = mathAbs(max[0] - min[0]);
-	                this.height = mathAbs(max[1] - min[1]);
+	                this.x = mathMin(lt[0], rb[0], lb[0], rt[0]);
+	                this.y = mathMin(lt[1], rb[1], lb[1], rt[1]);
+	                var maxX = mathMax(lt[0], rb[0], lb[0], rt[0]);
+	                var maxY = mathMax(lt[1], rb[1], lb[1], rt[1]);
+	                this.width = maxX - this.x;
+	                this.height = maxY - this.y;
 	            };
 	        })(),
 
@@ -1259,6 +1341,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	         * @return {boolean}
 	         */
 	        intersect: function (b) {
+	            if (!b) {
+	                return false;
+	            }
+
+	            if (!(b instanceof BoundingRect)) {
+	                // Normalize negative width/height.
+	                b = BoundingRect.create(b);
+	            }
+
 	            var a = this;
 	            var ax0 = a.x;
 	            var ax1 = a.x + a.width;
@@ -1296,14 +1387,35 @@ return /******/ (function(modules) { // webpackBootstrap
 	            this.y = other.y;
 	            this.width = other.width;
 	            this.height = other.height;
+	        },
+
+	        plain: function () {
+	            return {
+	                x: this.x,
+	                y: this.y,
+	                width: this.width,
+	                height: this.height
+	            };
 	        }
+	    };
+
+	    /**
+	     * @param {Object|module:zrender/core/BoundingRect} rect
+	     * @param {number} rect.x
+	     * @param {number} rect.y
+	     * @param {number} rect.width
+	     * @param {number} rect.height
+	     * @return {module:zrender/core/BoundingRect}
+	     */
+	    BoundingRect.create = function (rect) {
+	        return new BoundingRect(rect.x, rect.y, rect.width, rect.height);
 	    };
 
 	    module.exports = BoundingRect;
 
 
 /***/ },
-/* 7 */
+/* 6 */
 /***/ function(module, exports) {
 
 	
@@ -1327,8 +1439,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	         */
 	        create: function (x, y) {
 	            var out = new ArrayCtor(2);
-	            out[0] = x || 0;
-	            out[1] = y || 0;
+	            if (x == null) {
+	                x = 0;
+	            }
+	            if (y == null) {
+	                y = 0;
+	            }
+	            out[0] = x;
+	            out[1] = y;
 	            return out;
 	        },
 
@@ -1583,7 +1701,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 8 */
+/* 7 */
 /***/ function(module, exports) {
 
 	
@@ -1747,7 +1865,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 9 */
+/* 8 */
 /***/ function(module, exports) {
 
 	/**
@@ -1858,9 +1976,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	     * @param {number} x
 	     * @return {number}
 	     */
-	    number.round = function (x) {
-	        // PENDING
-	        return +(+x).toFixed(10);
+	    number.round = function (x, precision) {
+	        if (precision == null) {
+	            precision = 10;
+	        }
+	        // Avoid range error
+	        precision = Math.min(Math.max(0, precision), 20);
+	        return +(+x).toFixed(precision);
 	    };
 
 	    number.asc = function (arr) {
@@ -1875,6 +1997,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	     * @param {number} val
 	     */
 	    number.getPrecision = function (val) {
+	        val = +val;
 	        if (isNaN(val)) {
 	            return 0;
 	        }
@@ -1889,6 +2012,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	            count++;
 	        }
 	        return count;
+	    };
+
+	    number.getPrecisionSafe = function (val) {
+	        var str = val.toString();
+	        var dotIndex = str.indexOf('.');
+	        if (dotIndex < 0) {
+	            return 0;
+	        }
+	        return str.length - 1 - dotIndex;
 	    };
 
 	    /**
@@ -1930,16 +2062,23 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    /**
 	     * @param {string|Date|number} value
-	     * @return {number} timestamp
+	     * @return {Date} date
 	     */
 	    number.parseDate = function (value) {
-	        return value instanceof Date
-	            ? value
-	            : new Date(
-	                typeof value === 'string'
-	                    ? value.replace(/-/g, '/')
-	                    : Math.round(value)
-	            );
+	        if (value instanceof Date) {
+	            return value;
+	        }
+	        else if (typeof value === 'string') {
+	            // Treat as ISO format. See issue #3623
+	            var ret = new Date(value);
+	            if (isNaN(+ret)) {
+	                // FIXME new Date('1970-01-01') is UTC, new Date('1970/01/01') is local
+	                ret = new Date(new Date(value.replace(/-/g, '/')) - new Date('1970/01/01'));
+	            }
+	            return ret;
+	        }
+
+	        return new Date(Math.round(value));
 	    };
 
 	    /**
@@ -1980,40 +2119,113 @@ return /******/ (function(modules) { // webpackBootstrap
 	        return nf * exp10;
 	    };
 
+	    /**
+	     * Order intervals asc, and split them when overlap.
+	     * expect(numberUtil.reformIntervals([
+	     *     {interval: [18, 62], close: [1, 1]},
+	     *     {interval: [-Infinity, -70], close: [0, 0]},
+	     *     {interval: [-70, -26], close: [1, 1]},
+	     *     {interval: [-26, 18], close: [1, 1]},
+	     *     {interval: [62, 150], close: [1, 1]},
+	     *     {interval: [106, 150], close: [1, 1]},
+	     *     {interval: [150, Infinity], close: [0, 0]}
+	     * ])).toEqual([
+	     *     {interval: [-Infinity, -70], close: [0, 0]},
+	     *     {interval: [-70, -26], close: [1, 1]},
+	     *     {interval: [-26, 18], close: [0, 1]},
+	     *     {interval: [18, 62], close: [0, 1]},
+	     *     {interval: [62, 150], close: [0, 1]},
+	     *     {interval: [150, Infinity], close: [0, 0]}
+	     * ]);
+	     * @param {Array.<Object>} list, where `close` mean open or close
+	     *        of the interval, and Infinity can be used.
+	     * @return {Array.<Object>} The origin list, which has been reformed.
+	     */
+	    number.reformIntervals = function (list) {
+	        list.sort(function (a, b) {
+	            return littleThan(a, b, 0) ? -1 : 1;
+	        });
+
+	        var curr = -Infinity;
+	        var currClose = 1;
+	        for (var i = 0; i < list.length;) {
+	            var interval = list[i].interval;
+	            var close = list[i].close;
+
+	            for (var lg = 0; lg < 2; lg++) {
+	                if (interval[lg] <= curr) {
+	                    interval[lg] = curr;
+	                    close[lg] = !lg ? 1 - currClose : 1;
+	                }
+	                curr = interval[lg];
+	                currClose = close[lg];
+	            }
+
+	            if (interval[0] === interval[1] && close[0] * close[1] !== 1) {
+	                list.splice(i, 1);
+	            }
+	            else {
+	                i++;
+	            }
+	        }
+
+	        return list;
+
+	        function littleThan(a, b, lg) {
+	            return a.interval[lg] < b.interval[lg]
+	                || (
+	                    a.interval[lg] === b.interval[lg]
+	                    && (
+	                        (a.close[lg] - b.close[lg] === (!lg ? 1 : -1))
+	                        || (!lg && littleThan(a, b, 1))
+	                    )
+	                );
+	        }
+	    };
+
 	    module.exports = number;
 
 
 /***/ },
-/* 10 */
+/* 9 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
 
 	    var zrUtil = __webpack_require__(4);
-	    var numberUtil = __webpack_require__(9);
+	    var numberUtil = __webpack_require__(8);
+	    var textContain = __webpack_require__(10);
 
+	    var formatUtil = {};
 	    /**
 	     * 每三位默认加,格式化
 	     * @type {string|number} x
 	     */
-	    function addCommas(x) {
+	    formatUtil.addCommas = function (x) {
 	        if (isNaN(x)) {
 	            return '-';
 	        }
 	        x = (x + '').split('.');
 	        return x[0].replace(/(\d{1,3})(?=(?:\d{3})+(?!\d))/g,'$1,')
 	               + (x.length > 1 ? ('.' + x[1]) : '');
-	    }
+	    };
 
 	    /**
 	     * @param {string} str
+	     * @param {boolean} [upperCaseFirst=false]
 	     * @return {string} str
 	     */
-	    function toCamelCase(str) {
-	        return str.toLowerCase().replace(/-(.)/g, function(match, group1) {
+	    formatUtil.toCamelCase = function (str, upperCaseFirst) {
+	        str = (str || '').toLowerCase().replace(/-(.)/g, function(match, group1) {
 	            return group1.toUpperCase();
 	        });
-	    }
+
+	        if (upperCaseFirst && str) {
+	            str = str.charAt(0).toUpperCase() + str.slice(1);
+	        }
+
+	        return str;
+	    };
 
 	    /**
 	     * Normalize css liked array configuration
@@ -2023,7 +2235,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	     *  [4, 3, 2] => [4, 3, 2, 3]
 	     * @param {number|Array.<number>} val
 	     */
-	    function normalizeCssArray(val) {
+	    formatUtil.normalizeCssArray = function (val) {
 	        var len = val.length;
 	        if (typeof (val) === 'number') {
 	            return [val, val, val, val];
@@ -2037,29 +2249,30 @@ return /******/ (function(modules) { // webpackBootstrap
 	            return [val[0], val[1], val[2], val[1]];
 	        }
 	        return val;
-	    }
+	    };
 
-	    function encodeHTML(source) {
+	    formatUtil.encodeHTML = function (source) {
 	        return String(source)
 	            .replace(/&/g, '&amp;')
 	            .replace(/</g, '&lt;')
 	            .replace(/>/g, '&gt;')
 	            .replace(/"/g, '&quot;')
 	            .replace(/'/g, '&#39;');
-	    }
+	    };
 
 	    var TPL_VAR_ALIAS = ['a', 'b', 'c', 'd', 'e', 'f', 'g'];
 
-	    function wrapVar(varName, seriesIdx) {
+	    var wrapVar = function (varName, seriesIdx) {
 	        return '{' + varName + (seriesIdx == null ? '' : seriesIdx) + '}';
-	    }
+	    };
+
 	    /**
 	     * Template formatter
 	     * @param  {string} tpl
 	     * @param  {Array.<Object>|Object} paramsList
 	     * @return {string}
 	     */
-	    function formatTpl(tpl, paramsList) {
+	    formatUtil.formatTpl = function (tpl, paramsList) {
 	        if (!zrUtil.isArray(paramsList)) {
 	            paramsList = [paramsList];
 	        }
@@ -2068,7 +2281,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            return '';
 	        }
 
-	        var $vars = paramsList[0].$vars;
+	        var $vars = paramsList[0].$vars || [];
 	        for (var i = 0; i < $vars.length; i++) {
 	            var alias = TPL_VAR_ALIAS[i];
 	            tpl = tpl.replace(wrapVar(alias),  wrapVar(alias, 0));
@@ -2083,7 +2296,17 @@ return /******/ (function(modules) { // webpackBootstrap
 	        }
 
 	        return tpl;
-	    }
+	    };
+
+
+	    /**
+	     * @param {string} str
+	     * @return {string}
+	     * @inner
+	     */
+	    var s2d = function (str) {
+	        return str < 10 ? ('0' + str) : str;
+	    };
 
 	    /**
 	     * ISO Date format
@@ -2091,7 +2314,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	     * @param {number} value
 	     * @inner
 	     */
-	    function formatTime(tpl, value) {
+	    formatUtil.formatTime = function (tpl, value) {
 	        if (tpl === 'week'
 	            || tpl === 'month'
 	            || tpl === 'quarter'
@@ -2123,31 +2346,301 @@ return /******/ (function(modules) { // webpackBootstrap
 	            .replace('s', s);
 
 	        return tpl;
+	    };
+
+	    /**
+	     * Capital first
+	     * @param {string} str
+	     * @return {string}
+	     */
+	    formatUtil.capitalFirst = function (str) {
+	        return str ? str.charAt(0).toUpperCase() + str.substr(1) : str;
+	    };
+
+	    formatUtil.truncateText = textContain.truncateText;
+
+	    module.exports = formatUtil;
+
+
+/***/ },
+/* 10 */
+/***/ function(module, exports, __webpack_require__) {
+
+	
+
+	    var textWidthCache = {};
+	    var textWidthCacheCounter = 0;
+	    var TEXT_CACHE_MAX = 5000;
+
+	    var util = __webpack_require__(4);
+	    var BoundingRect = __webpack_require__(5);
+	    var retrieve = util.retrieve;
+
+	    function getTextWidth(text, textFont) {
+	        var key = text + ':' + textFont;
+	        if (textWidthCache[key]) {
+	            return textWidthCache[key];
+	        }
+
+	        var textLines = (text + '').split('\n');
+	        var width = 0;
+
+	        for (var i = 0, l = textLines.length; i < l; i++) {
+	            // measureText 可以被覆盖以兼容不支持 Canvas 的环境
+	            width = Math.max(textContain.measureText(textLines[i], textFont).width, width);
+	        }
+
+	        if (textWidthCacheCounter > TEXT_CACHE_MAX) {
+	            textWidthCacheCounter = 0;
+	            textWidthCache = {};
+	        }
+	        textWidthCacheCounter++;
+	        textWidthCache[key] = width;
+
+	        return width;
+	    }
+
+	    function getTextRect(text, textFont, textAlign, textBaseline) {
+	        var textLineLen = ((text || '') + '').split('\n').length;
+
+	        var width = getTextWidth(text, textFont);
+	        // FIXME 高度计算比较粗暴
+	        var lineHeight = getTextWidth('国', textFont);
+	        var height = textLineLen * lineHeight;
+
+	        var rect = new BoundingRect(0, 0, width, height);
+	        // Text has a special line height property
+	        rect.lineHeight = lineHeight;
+
+	        switch (textBaseline) {
+	            case 'bottom':
+	            case 'alphabetic':
+	                rect.y -= lineHeight;
+	                break;
+	            case 'middle':
+	                rect.y -= lineHeight / 2;
+	                break;
+	            // case 'hanging':
+	            // case 'top':
+	        }
+
+	        // FIXME Right to left language
+	        switch (textAlign) {
+	            case 'end':
+	            case 'right':
+	                rect.x -= rect.width;
+	                break;
+	            case 'center':
+	                rect.x -= rect.width / 2;
+	                break;
+	            // case 'start':
+	            // case 'left':
+	        }
+
+	        return rect;
+	    }
+
+	    function adjustTextPositionOnRect(textPosition, rect, textRect, distance) {
+
+	        var x = rect.x;
+	        var y = rect.y;
+
+	        var height = rect.height;
+	        var width = rect.width;
+
+	        var textHeight = textRect.height;
+
+	        var halfHeight = height / 2 - textHeight / 2;
+
+	        var textAlign = 'left';
+
+	        switch (textPosition) {
+	            case 'left':
+	                x -= distance;
+	                y += halfHeight;
+	                textAlign = 'right';
+	                break;
+	            case 'right':
+	                x += distance + width;
+	                y += halfHeight;
+	                textAlign = 'left';
+	                break;
+	            case 'top':
+	                x += width / 2;
+	                y -= distance + textHeight;
+	                textAlign = 'center';
+	                break;
+	            case 'bottom':
+	                x += width / 2;
+	                y += height + distance;
+	                textAlign = 'center';
+	                break;
+	            case 'inside':
+	                x += width / 2;
+	                y += halfHeight;
+	                textAlign = 'center';
+	                break;
+	            case 'insideLeft':
+	                x += distance;
+	                y += halfHeight;
+	                textAlign = 'left';
+	                break;
+	            case 'insideRight':
+	                x += width - distance;
+	                y += halfHeight;
+	                textAlign = 'right';
+	                break;
+	            case 'insideTop':
+	                x += width / 2;
+	                y += distance;
+	                textAlign = 'center';
+	                break;
+	            case 'insideBottom':
+	                x += width / 2;
+	                y += height - textHeight - distance;
+	                textAlign = 'center';
+	                break;
+	            case 'insideTopLeft':
+	                x += distance;
+	                y += distance;
+	                textAlign = 'left';
+	                break;
+	            case 'insideTopRight':
+	                x += width - distance;
+	                y += distance;
+	                textAlign = 'right';
+	                break;
+	            case 'insideBottomLeft':
+	                x += distance;
+	                y += height - textHeight - distance;
+	                break;
+	            case 'insideBottomRight':
+	                x += width - distance;
+	                y += height - textHeight - distance;
+	                textAlign = 'right';
+	                break;
+	        }
+
+	        return {
+	            x: x,
+	            y: y,
+	            textAlign: textAlign,
+	            textBaseline: 'top'
+	        };
 	    }
 
 	    /**
-	     * @param {string} str
+	     * Show ellipsis if overflow.
+	     *
+	     * @param  {string} text
+	     * @param  {string} containerWidth
+	     * @param  {string} textFont
+	     * @param  {number} [ellipsis='...']
+	     * @param  {Object} [options]
+	     * @param  {number} [options.maxIterations=3]
+	     * @param  {number} [options.minChar=0] If truncate result are less
+	     *                  then minChar, ellipsis will not show, which is
+	     *                  better for user hint in some cases.
+	     * @param  {number} [options.placeholder=''] When all truncated, use the placeholder.
 	     * @return {string}
-	     * @inner
 	     */
-	    function s2d(str) {
-	        return str < 10 ? ('0' + str) : str;
+	    function truncateText(text, containerWidth, textFont, ellipsis, options) {
+	        if (!containerWidth) {
+	            return '';
+	        }
+
+	        options = options || {};
+
+	        ellipsis = retrieve(ellipsis, '...');
+	        var maxIterations = retrieve(options.maxIterations, 2);
+	        var minChar = retrieve(options.minChar, 0);
+	        // FIXME
+	        // Other languages?
+	        var cnCharWidth = getTextWidth('国', textFont);
+	        // FIXME
+	        // Consider proportional font?
+	        var ascCharWidth = getTextWidth('a', textFont);
+	        var placeholder = retrieve(options.placeholder, '');
+
+	        // Example 1: minChar: 3, text: 'asdfzxcv', truncate result: 'asdf', but not: 'a...'.
+	        // Example 2: minChar: 3, text: '维度', truncate result: '维', but not: '...'.
+	        var contentWidth = containerWidth = Math.max(0, containerWidth - 1); // Reserve some gap.
+	        for (var i = 0; i < minChar && contentWidth >= ascCharWidth; i++) {
+	            contentWidth -= ascCharWidth;
+	        }
+
+	        var ellipsisWidth = getTextWidth(ellipsis);
+	        if (ellipsisWidth > contentWidth) {
+	            ellipsis = '';
+	            ellipsisWidth = 0;
+	        }
+
+	        contentWidth = containerWidth - ellipsisWidth;
+
+	        var textLines = (text + '').split('\n');
+
+	        for (var i = 0, len = textLines.length; i < len; i++) {
+	            var textLine = textLines[i];
+	            var lineWidth = getTextWidth(textLine, textFont);
+
+	            if (lineWidth <= containerWidth) {
+	                continue;
+	            }
+
+	            for (var j = 0;; j++) {
+	                if (lineWidth <= contentWidth || j >= maxIterations) {
+	                    textLine += ellipsis;
+	                    break;
+	                }
+
+	                var subLength = j === 0
+	                    ? estimateLength(textLine, contentWidth, ascCharWidth, cnCharWidth)
+	                    : lineWidth > 0
+	                    ? Math.floor(textLine.length * contentWidth / lineWidth)
+	                    : 0;
+
+	                textLine = textLine.substr(0, subLength);
+	                lineWidth = getTextWidth(textLine, textFont);
+	            }
+
+	            if (textLine === '') {
+	                textLine = placeholder;
+	            }
+
+	            textLines[i] = textLine;
+	        }
+
+	        return textLines.join('\n');
 	    }
 
-	    module.exports = {
+	    function estimateLength(text, contentWidth, ascCharWidth, cnCharWidth) {
+	        var width = 0;
+	        var i = 0;
+	        for (var len = text.length; i < len && width < contentWidth; i++) {
+	            var charCode = text.charCodeAt(i);
+	            width += (0 <= charCode && charCode <= 127) ? ascCharWidth : cnCharWidth;
+	        }
+	        return i;
+	    }
 
-	        normalizeCssArray: normalizeCssArray,
+	    var textContain = {
 
-	        addCommas: addCommas,
+	        getWidth: getTextWidth,
 
-	        toCamelCase: toCamelCase,
+	        getBoundingRect: getTextRect,
 
-	        encodeHTML: encodeHTML,
+	        adjustTextPositionOnRect: adjustTextPositionOnRect,
 
-	        formatTpl: formatTpl,
+	        truncateText: truncateText,
 
-	        formatTime: formatTime
+	        measureText: function (text, textFont) {
+	            var ctx = util.getContext();
+	            ctx.font = textFont || '12px sans-serif';
+	            return ctx.measureText(text);
+	        }
 	    };
+
+	    module.exports = textContain;
 
 
 /***/ },
@@ -2250,7 +2743,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    // The rule should not be complex, otherwise user might not
 	    // be able to known where the data is wrong.
-	    function guessOrdinal(data, dimIndex) {
+	    var guessOrdinal = completeDimensions.guessOrdinal = function (data, dimIndex) {
 	        for (var i = 0, len = data.length; i < len; i++) {
 	            var value = retrieveValue(data[i]);
 
@@ -2267,7 +2760,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            }
 	        }
 	        return false;
-	    }
+	    };
 
 	    function retrieveValue(o) {
 	        return zrUtil.isArray(o) ? o : zrUtil.isObject(o) ? o.value: o;
