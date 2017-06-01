@@ -1,4 +1,4 @@
-var echarts = require('echarts');
+var echarts = require('echarts/lib/echarts');
 var layoutUtil = require('echarts/lib/util/layout');
 
 require('./WordCloudSeries');
