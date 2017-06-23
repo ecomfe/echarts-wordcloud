@@ -1,4 +1,4 @@
-var echarts = require('echarts');
+var echarts = require('echarts/lib/echarts');
 var layoutUtil = require('echarts/lib/util/layout');
 
 require('./WordCloudSeries');
@@ -123,7 +123,7 @@ echarts.registerLayout(function (ecModel, api) {
 
             rotationStep: seriesModel.get('rotationStep') * DEGREE_TO_RAD,
 
-            drawOutOfBound: false,
+            drawOutOfBound: seriesModel.get('drawOutOfBound'),
 
             shuffle: false,
 

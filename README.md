@@ -78,6 +78,10 @@ chart.setOption({
 
         gridSize: 8,
 
+        // set to true to allow word being draw partly outside of the canvas.
+        // Allow word bigger than the size of the canvas to be drawn
+        drawOutOfBounds: false,
+
         // Global text style
         textStyle: {
             normal: {

@@ -1,5 +1,5 @@
 var completeDimensions = require('echarts/lib/data/helper/completeDimensions');
-var echarts = require('echarts');
+var echarts = require('echarts/lib/echarts');
 
 echarts.extendSeriesModel({
 
@@ -42,6 +42,8 @@ echarts.extendSeriesModel({
         rotationStep: 45,
 
         gridSize: 8,
+
+        drawOutOfBound: false,
 
         textStyle: {
             normal: {
