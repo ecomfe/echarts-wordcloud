@@ -162,3 +162,27 @@ echarts.registerLayout(function (ecModel, api) {
         };
     });
 });
+
+echarts.registerPreprocessor(function (option) {
+    var series = (option || {}).series;
+    !echarts.util.isArray(series) && (series = series ? [series] : []);
+
+    var compats = ['shadowColor', 'shadowBlur', 'shadowOffsetX', 'shadowOffsetY'];
+
+    echarts.util.each(series, function (seriesItem) {
+        if (seriesItem && seriesItem.type === 'wordCloud') {
+            var textStyle = seriesItem.textStyle || {};
+
+            compatTextStyle(textStyle.normal);
+            compatTextStyle(textStyle.emphasis);
+        }
+    });
+
+    function compatTextStyle(textStyle) {
+        textStyle && echarts.util.each(compats, function (key) {
+            if (textStyle.hasOwnProperty(key)) {
+                textStyle['text' + echarts.format.capitalFirst(key)] = textStyle[key];
+            }
+        });
+    }
+});

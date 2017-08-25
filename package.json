@@ -1,12 +1,12 @@
 {
   "name": "echarts-wordcloud",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "ECharts wordcloud extension based on wordcloud2.js",
   "main": "index.js",
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "echarts": "^3.6.2"
+    "echarts": "^3.7.0"
   },
   "repository": {
     "type": "git",
