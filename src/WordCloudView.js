@@ -26,6 +26,7 @@ echarts.extendChartView({
                     x: drawn.info.fillTextOffsetX,
                     y: drawn.info.fillTextOffsetY + size * 0.5,
                     text: text,
+                    textBaseline: 'middle',
                     textFill: data.getItemVisual(dataIdx, 'color'),
                     fontSize: size
                 }),
@@ -43,7 +44,7 @@ echarts.extendChartView({
 
             echarts.graphic.setHoverStyle(
                 textEl,
-                echarts.graphic.setTextStyle({}, emphasisTextStyleModel, null, {forMerge: true})
+                echarts.graphic.setTextStyle({}, emphasisTextStyleModel, null, {forMerge: true}, true)
             );
         };
 

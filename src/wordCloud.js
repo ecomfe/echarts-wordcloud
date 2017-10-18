@@ -55,7 +55,6 @@ function updateCanvasMask(maskCanvas) {
     }
 
     ctx.putImageData(newImageData, 0, 0);
-    console.log(maskCanvas.toDataURL());
 }
 
 echarts.registerLayout(function (ecModel, api) {
