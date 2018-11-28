@@ -573,8 +573,13 @@ if (!window.clearImmediate) {
       fctx.fillText(word, fillTextOffsetX * mu,
                     (fillTextOffsetY + fontSize * 0.5) * mu);
 
-      // Get the pixels of the text
-      var imageData = fctx.getImageData(0, 0, width, height).data;
+			// Get the pixels of the text
+			var imageData;
+			try {
+				imageData = fctx.getImageData(0, 0, width, height).data;
+			} catch (error) {
+				return false;
+			}
 
       if (exceedTime()) {
         return false;
