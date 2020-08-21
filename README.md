@@ -1,8 +1,4 @@
-# [ECharts](https://github.com/ecomfe/echarts) wordcloud extension based on [wordcloud2.js](https://github.com/timdream/wordcloud2.js)
-
-<a href="http://echarts.baidu.com">
-    <img style="vertical-align: top;" src="https://github.com/ecomfe/echarts/raw/master/asset/logo.png?raw=true" alt="logo" height="50px">
-</a>
+# [Apache ECharts (incubating)](https://github.com/apache/incubator-echarts) wordcloud extension based on [wordcloud2.js](https://github.com/timdream/wordcloud2.js)
 
 ![](./example/word-cloud.png)
 
