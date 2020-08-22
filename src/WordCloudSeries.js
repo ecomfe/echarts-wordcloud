@@ -1,4 +1,4 @@
-var completeDimensions = require('echarts/lib/data/helper/completeDimensions');
+var createListSimply = require("echarts/lib/chart/helper/createListSimply");
 var echarts = require('echarts/lib/echarts');
 
 echarts.extendSeriesModel({
@@ -13,10 +13,7 @@ echarts.extendSeriesModel({
     },
 
     getInitialData: function (option, ecModel) {
-        var dimensions = completeDimensions(['value'], option.data);
-        var list = new echarts.List(dimensions, this);
-        list.initData(option.data);
-        return list;
+        return createListSimply(this, ['value']);
     },
 
     // Most of options are from https://github.com/timdream/wordcloud2.js/blob/gh-pages/API.md

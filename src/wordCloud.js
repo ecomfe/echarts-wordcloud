@@ -86,12 +86,13 @@ echarts.registerLayout(function (ecModel, api) {
 
         var sizeRange = seriesModel.get('sizeRange');
         var rotationRange = seriesModel.get('rotationRange');
-        var valueExtent = data.getDataExtent('value');
+        var valueDim = data.mapDimension('value');
+        var valueExtent = data.getDataExtent(valueDim);
 
         var DEGREE_TO_RAD = Math.PI / 180;
         var gridSize = seriesModel.get('gridSize');
         wordCloudLayoutHelper(canvas, {
-            list: data.mapArray('value', function (value, idx) {
+            list: data.mapArray(valueDim, function (value, idx) {
                 var itemModel = data.getItemModel(idx);
                 return [
                     data.getName(idx),
