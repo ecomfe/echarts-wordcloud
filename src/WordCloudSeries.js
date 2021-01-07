@@ -1,11 +1,16 @@
-var completeDimensions = require('echarts/lib/data/helper/completeDimensions');
-var echarts = require('echarts/lib/echarts');
+import * as echarts from 'echarts/lib/echarts';
 
 echarts.extendSeriesModel({
 
     type: 'series.wordCloud',
 
-    visualColorAccessPath: 'textStyle.normal.color',
+    visualStyleAccessPath: 'textStyle',
+    visualStyleMapper: function (model) {
+        return {
+            fill: model.get('color')
+        };
+    },
+    visualDrawType: 'fill',
 
     optionUpdated: function () {
         var option = this.option;
@@ -13,7 +18,9 @@ echarts.extendSeriesModel({
     },
 
     getInitialData: function (option, ecModel) {
-        var dimensions = completeDimensions(['value'], option.data);
+        var dimensions = echarts.helper.createDimensions(option.data, {
+            coordDimensions: ['value']
+        });
         var list = new echarts.List(dimensions, this);
         list.initData(option.data);
         return list;
@@ -46,9 +53,7 @@ echarts.extendSeriesModel({
         drawOutOfBound: false,
 
         textStyle: {
-            normal: {
-                fontWeight: 'normal'
-            }
+            fontWeight: 'normal'
         }
     }
 });

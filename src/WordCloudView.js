@@ -1,8 +1,5 @@
-var echarts = require('echarts/lib/echarts');
-
-function getShallow(model, path) {
-    return model && model.getShallow(path);
-}
+import * as echarts from 'echarts/lib/echarts';
+import {createTextStyle} from 'echarts/lib/label/labelStyle';
 
 echarts.extendChartView({
 
@@ -18,23 +15,22 @@ echarts.extendChartView({
 
         seriesModel.layoutInstance.ondraw = function (text, size, dataIdx, drawn) {
             var itemModel = data.getItemModel(dataIdx);
-            var textStyleModel = itemModel.getModel('textStyle.normal');
-            var emphasisTextStyleModel = itemModel.getModel('textStyle.emphasis');
+            var textStyleModel = itemModel.getModel('textStyle');
+            var emphasisTextStyleModel = itemModel.getModel(['emphasis', 'textStyle']);
 
             var textEl = new echarts.graphic.Text({
-                style: echarts.graphic.setTextStyle({}, textStyleModel, {
+                style: createTextStyle(textStyleModel, {
                     x: drawn.info.fillTextOffsetX,
                     y: drawn.info.fillTextOffsetY + size * 0.5,
                     text: text,
-                    textBaseline: 'middle',
-                    textFill: data.getItemVisual(dataIdx, 'color'),
+                    verticalAlign: 'middle',
+                    fill: data.getItemVisual(dataIdx, 'style').fill,
                     fontSize: size
                 }),
-                scale: [1 / drawn.info.mu, 1 / drawn.info.mu],
-                position: [
-                    (drawn.gx + drawn.info.gw / 2) * gridSize,
-                    (drawn.gy + drawn.info.gh / 2) * gridSize
-                ],
+                scaleX: 1 / drawn.info.mu,
+                scaleY: 1 / drawn.info.mu,
+                x: (drawn.gx + drawn.info.gw / 2) * gridSize,
+                y: (drawn.gy + drawn.info.gh / 2) * gridSize,
                 rotation: drawn.rot
             });
 
@@ -42,10 +38,13 @@ echarts.extendChartView({
 
             data.setItemGraphicEl(dataIdx, textEl);
 
-            echarts.graphic.setHoverStyle(
-                textEl,
-                echarts.graphic.setTextStyle({}, emphasisTextStyleModel, null, {forMerge: true}, true)
-            );
+            textEl.ensureState('emphasis').style = createTextStyle(emphasisTextStyleModel, null, {forMerge: true}, true);
+            textEl.stateTransition = {
+                duration: seriesModel.get('animation') ? seriesModel.get(['stateAnimation', 'duration']) : 0,
+                easing: seriesModel.get(['stateAnimation', 'easing'])
+            };
+            // TODO
+            textEl.__highDownDispatcher = true;
         };
 
         this._model = seriesModel;

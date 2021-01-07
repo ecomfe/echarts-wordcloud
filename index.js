@@ -1,1 +1,1 @@
-module.exports = require('./src/wordCloud');
+import './src/wordCloud';

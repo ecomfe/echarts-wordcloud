@@ -24,8 +24,8 @@ npm install echarts-wordcloud
 ```
 
 ```js
-var echarts = require('echarts');
-require('echarts-wordcloud');
+import * as echarts from 'echarts'
+import 'echarts-wordcloud';
 ```
 
 ## Usage

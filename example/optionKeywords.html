@@ -1,7 +1,9 @@
 <html>
     <head>
         <meta charset="utf-8">
-        <script src='https://cdn.bootcss.com/echarts/3.7.2/echarts.simple.js'></script>
+        <script src='https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js'></script>
+
+        <!-- <script src="../../echarts/dist/echarts.js"></script> -->
         <script src='../dist/echarts-wordcloud.js'></script>
     </head>
     <body>
@@ -377,16 +379,16 @@
                     maskImage: maskImage,
                     drawOutOfBound: false,
                     textStyle: {
-                        normal: {
-                            color: function () {
-                                return 'rgb(' + [
-                                    Math.round(Math.random() * 160),
-                                    Math.round(Math.random() * 160),
-                                    Math.round(Math.random() * 160)
-                                ].join(',') + ')';
-                            }
-                        },
-                        emphasis: {
+                        color: function () {
+                            return 'rgb(' + [
+                                Math.round(Math.random() * 160),
+                                Math.round(Math.random() * 160),
+                                Math.round(Math.random() * 160)
+                            ].join(',') + ')';
+                        }
+                    },
+                    emphasis: {
+                        textStyle: {
                             color: 'red'
                         }
                     },

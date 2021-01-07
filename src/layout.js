@@ -86,8 +86,6 @@ if (!window.clearImmediate) {
   })();
 }
 
-(function(global) {
-
   // Check if WordCloud can run on this browser
   var isSupported = (function isSupported() {
     var canvas = document.createElement('canvas');
@@ -1161,13 +1159,4 @@ if (!window.clearImmediate) {
   WordCloud.isSupported = isSupported;
   WordCloud.minFontSize = minFontSize;
 
-  // Expose the library as an AMD module
-  if (typeof define === 'function' && define.amd) {
-    define('wordcloud', [], function() { return WordCloud; });
-  } else if (typeof module !== 'undefined' && module.exports) {
-    module.exports = WordCloud;
-  } else {
-    global.WordCloud = WordCloud;
-  }
-
-})(this); //jshint ignore:line
+  export default WordCloud;
