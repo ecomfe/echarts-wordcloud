@@ -108,6 +108,7 @@ echarts.registerLayout(function (ecModel, api) {
             fontWeight: seriesModel.get('textStyle.fontWeight')
                 || seriesModel.get('emphasis.textStyle.fontWeight')
                 || ecModel.get('textStyle.fontWeight'),
+
             gridSize: gridSize,
 
             ellipticity: gridRect.height / gridRect.width,
@@ -122,6 +123,8 @@ echarts.registerLayout(function (ecModel, api) {
             rotationStep: seriesModel.get('rotationStep') * DEGREE_TO_RAD,
 
             drawOutOfBound: seriesModel.get('drawOutOfBound'),
+
+            layoutAnimation: seriesModel.get('layoutAnimation'),
 
             shuffle: false,
 

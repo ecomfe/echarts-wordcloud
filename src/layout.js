@@ -191,6 +191,8 @@ if (!window.clearImmediate) {
       maskColor: 'rgba(255,0,0,0.3)',
       maskGapWidth: 0.3,
 
+      layoutAnimation: true,
+
       wait: 0,
       abortThreshold: 0, // disabled
       abort: function noop() {},
@@ -1100,7 +1102,16 @@ if (!window.clearImmediate) {
 
       i = 0;
       var loopingFunction, stoppingFunction;
-      if (settings.wait !== 0) {
+      var layouting = true;
+      if (!settings.layoutAnimation) {
+        loopingFunction = function (cb) {
+          cb();
+        }
+        stoppingFunction = function () {
+          layouting = false;
+        }
+      }
+      else if (settings.wait !== 0) {
         loopingFunction = window.setTimeout;
         stoppingFunction = window.clearTimeout;
       } else {
@@ -1127,7 +1138,11 @@ if (!window.clearImmediate) {
 
       addEventListener('wordcloudstart', anotherWordCloudStart);
 
-      var timer = loopingFunction(function loop() {
+      // At least wait the following code before call the first iteration.
+      var timer = (settings.layoutAnimation ? loopingFunction : setTimeout)(function loop() {
+        if (!layouting) {
+          return;
+        }
         if (i >= settings.list.length) {
           stoppingFunction(timer);
           sendEvent('wordcloudstop', false);
