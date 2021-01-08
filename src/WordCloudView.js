@@ -1,5 +1,4 @@
 import * as echarts from 'echarts/lib/echarts';
-import {createTextStyle} from 'echarts/lib/label/labelStyle';
 
 echarts.extendChartView({
 
@@ -16,29 +15,41 @@ echarts.extendChartView({
         seriesModel.layoutInstance.ondraw = function (text, size, dataIdx, drawn) {
             var itemModel = data.getItemModel(dataIdx);
             var textStyleModel = itemModel.getModel('textStyle');
-            var emphasisTextStyleModel = itemModel.getModel(['emphasis', 'textStyle']);
 
             var textEl = new echarts.graphic.Text({
-                style: createTextStyle(textStyleModel, {
-                    x: drawn.info.fillTextOffsetX,
-                    y: drawn.info.fillTextOffsetY + size * 0.5,
-                    text: text,
-                    verticalAlign: 'middle',
-                    fill: data.getItemVisual(dataIdx, 'style').fill,
-                    fontSize: size
-                }),
+                style: echarts.helper.createTextStyle(textStyleModel),
                 scaleX: 1 / drawn.info.mu,
                 scaleY: 1 / drawn.info.mu,
                 x: (drawn.gx + drawn.info.gw / 2) * gridSize,
                 y: (drawn.gy + drawn.info.gh / 2) * gridSize,
                 rotation: drawn.rot
             });
+            textEl.setStyle({
+                x: drawn.info.fillTextOffsetX,
+                y: drawn.info.fillTextOffsetY + size * 0.5,
+                text: text,
+                verticalAlign: 'middle',
+                fill: data.getItemVisual(dataIdx, 'style').fill,
+                fontSize: size
+            });
 
             group.add(textEl);
 
             data.setItemGraphicEl(dataIdx, textEl);
 
-            textEl.ensureState('emphasis').style = createTextStyle(emphasisTextStyleModel, null, {forMerge: true}, true);
+            textEl.ensureState('emphasis').style = echarts.helper.createTextStyle(itemModel.getModel(['emphasis', 'textStyle']), {
+                state: 'emphasis'
+            });
+            textEl.ensureState('blur').style = echarts.helper.createTextStyle(itemModel.getModel(['blur', 'textStyle']), {
+                state: 'blur'
+            });
+
+            echarts.helper.enableHoverEmphasis(
+                textEl,
+                itemModel.get(['emphasis', 'focus']),
+                itemModel.get(['emphasis', 'blurScope'])
+            );
+
             textEl.stateTransition = {
                 duration: seriesModel.get('animation') ? seriesModel.get(['stateAnimation', 'duration']) : 0,
                 easing: seriesModel.get(['stateAnimation', 'easing'])

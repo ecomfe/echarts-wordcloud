@@ -1,5 +1,4 @@
 import * as echarts from 'echarts/lib/echarts';
-import * as layoutUtil from 'echarts/lib/util/layout';
 
 import './WordCloudSeries';
 import './WordCloudView';
@@ -59,7 +58,7 @@ function updateCanvasMask(maskCanvas) {
 
 echarts.registerLayout(function (ecModel, api) {
     ecModel.eachSeriesByType('wordCloud', function (seriesModel) {
-        var gridRect = layoutUtil.getLayoutRect(
+        var gridRect = echarts.helper.getLayoutRect(
             seriesModel.getBoxLayoutParams(), {
                 width: api.getWidth(),
                 height: api.getHeight()
