@@ -28,6 +28,11 @@ import * as echarts from 'echarts'
 import 'echarts-wordcloud';
 ```
 
+NOTE:
+
+echarts-wordcloud@2 is for echarts@5
+echarts-wordcloud@1 is for echarts@4
+
 ## Usage
 
 ```js
@@ -79,22 +84,28 @@ chart.setOption({
         // Allow word bigger than the size of the canvas to be drawn
         drawOutOfBound: false,
 
+        // If perform layout animation.
+        // NOTE disable it will lead to UI blocking when there is lots of words.
+        layoutAnimation: true,
+
         // Global text style
         textStyle: {
-            normal: {
-                fontFamily: 'sans-serif',
-                fontWeight: 'bold',
-                // Color can be a callback function or a color string
-                color: function () {
-                    // Random color
-                    return 'rgb(' + [
-                        Math.round(Math.random() * 160),
-                        Math.round(Math.random() * 160),
-                        Math.round(Math.random() * 160)
-                    ].join(',') + ')';
-                }
-            },
-            emphasis: {
+            fontFamily: 'sans-serif',
+            fontWeight: 'bold',
+            // Color can be a callback function or a color string
+            color: function () {
+                // Random color
+                return 'rgb(' + [
+                    Math.round(Math.random() * 160),
+                    Math.round(Math.random() * 160),
+                    Math.round(Math.random() * 160)
+                ].join(',') + ')';
+            }
+        },
+        emphasis: {
+            focus: 'self',
+
+            textStyle: {
                 shadowBlur: 10,
                 shadowColor: '#333'
             }
@@ -106,8 +117,6 @@ chart.setOption({
             value: 366,
             // Style of single text
             textStyle: {
-                normal: {},
-                emphasis: {}
             }
         }]
     }]
