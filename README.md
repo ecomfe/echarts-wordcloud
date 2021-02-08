@@ -1,3 +1,5 @@
+# echarts-wordcloud
+
 Unofficial (https://github.com/apache/incubator-echarts) wordcloud extension based on [wordcloud2.js](https://github.com/timdream/wordcloud2.js) for Apache ECharts. 
 
 ![](./example/word-cloud.png)
