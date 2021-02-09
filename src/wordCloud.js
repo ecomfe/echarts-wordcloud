@@ -96,7 +96,8 @@ echarts.registerLayout(function (ecModel, api) {
                     data.getName(idx),
                     itemModel.get('textStyle.fontSize', true)
                         || echarts.number.linearMap(value, valueExtent, sizeRange),
-                    idx
+                    idx,
+                    typeof(itemModel.get('textStyle.rotation')) != 'undefined' ? itemModel.get('textStyle.rotation') : false
                 ];
             }).sort(function (a, b) {
                 // Sort from large to small in case there is no more room for more words

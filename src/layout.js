@@ -867,7 +867,7 @@ if (!window.clearImmediate) {
       var rotateDeg = getRotateDeg();
 
       // get info needed to put the text onto the canvas
-      var info = getTextInfo(word, weight, rotateDeg);
+      var info = typeof(item[3]) == 'number' ? item[3] : getTextInfo(word, weight, rotateDeg);
 
       // not getting the info means we shouldn't be drawing this one.
       if (!info) {
