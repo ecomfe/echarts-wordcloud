@@ -5,9 +5,6 @@
 
         <!-- <script src="../../echarts/dist/echarts.js"></script> -->
         <script src='../dist/echarts-wordcloud.js'></script>
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap" rel="stylesheet">
     </head>
     <body>
         <style>
@@ -381,7 +378,7 @@
                     maskImage: maskImage,
                     drawOutOfBound: false,
                     textStyle: {
-                        fontFamily: 'Roboto',
+                        fontWeight: 'bold',
                         color: function () {
                             return 'rgb(' + [
                                 Math.round(Math.random() * 200) + 50,
@@ -392,7 +389,7 @@
                     },
                     emphasis: {
                         textStyle: {
-                            color: 'red'
+                            color: '#528'
                         }
                     },
                     data: data.sort(function (a, b) {
