@@ -5,6 +5,9 @@
 
         <!-- <script src="../../echarts/dist/echarts.js"></script> -->
         <script src='../dist/echarts-wordcloud.js'></script>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap" rel="stylesheet">
     </head>
     <body>
         <style>
@@ -371,19 +374,19 @@
             var option = {
                 series: [ {
                     type: 'wordCloud',
-                    sizeRange: [10, 100],
-                    rotationRange: [-90, 90],
-                    rotationStep: 45,
-                    gridSize: 2,
+                    sizeRange: [4, 150],
+                    rotationRange: [0, 0],
+                    gridSize: 0,
                     shape: 'pentagon',
                     maskImage: maskImage,
                     drawOutOfBound: false,
                     textStyle: {
+                        fontFamily: 'Roboto',
                         color: function () {
                             return 'rgb(' + [
-                                Math.round(Math.random() * 160),
-                                Math.round(Math.random() * 160),
-                                Math.round(Math.random() * 160)
+                                Math.round(Math.random() * 200) + 50,
+                                Math.round(Math.random() * 50),
+                                Math.round(Math.random() * 50) + 50
                             ].join(',') + ')';
                         }
                     },
