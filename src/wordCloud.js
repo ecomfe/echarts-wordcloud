@@ -1,10 +1,9 @@
-var echarts = require('echarts/lib/echarts');
-var layoutUtil = require('echarts/lib/util/layout');
+import * as echarts from 'echarts/lib/echarts';
 
-require('./WordCloudSeries');
-require('./WordCloudView');
+import './WordCloudSeries';
+import './WordCloudView';
 
-var wordCloudLayoutHelper = require('./layout');
+import wordCloudLayoutHelper from './layout';
 
 if (!wordCloudLayoutHelper.isSupported) {
     throw new Error('Sorry your browser not support wordCloud');
@@ -59,7 +58,7 @@ function updateCanvasMask(maskCanvas) {
 
 echarts.registerLayout(function (ecModel, api) {
     ecModel.eachSeriesByType('wordCloud', function (seriesModel) {
-        var gridRect = layoutUtil.getLayoutRect(
+        var gridRect = echarts.helper.getLayoutRect(
             seriesModel.getBoxLayoutParams(), {
                 width: api.getWidth(),
                 height: api.getHeight()
@@ -95,7 +94,7 @@ echarts.registerLayout(function (ecModel, api) {
                 var itemModel = data.getItemModel(idx);
                 return [
                     data.getName(idx),
-                    itemModel.get('textStyle.normal.textSize', true)
+                    itemModel.get('textStyle.fontSize', true)
                         || echarts.number.linearMap(value, valueExtent, sizeRange),
                     idx,
                     typeof(itemModel.get('textStyle.rotation')) != 'undefined' ? itemModel.get('textStyle.rotation') : false
@@ -104,12 +103,13 @@ echarts.registerLayout(function (ecModel, api) {
                 // Sort from large to small in case there is no more room for more words
                 return b[1] - a[1];
             }),
-            fontFamily: seriesModel.get('textStyle.normal.fontFamily')
-                || seriesModel.get('textStyle.emphasis.fontFamily')
+            fontFamily: seriesModel.get('textStyle.fontFamily')
+                || seriesModel.get('emphasis.textStyle.fontFamily')
                 || ecModel.get('textStyle.fontFamily'),
-            fontWeight: seriesModel.get('textStyle.normal.fontWeight')
-                || seriesModel.get('textStyle.emphasis.fontWeight')
+            fontWeight: seriesModel.get('textStyle.fontWeight')
+                || seriesModel.get('emphasis.textStyle.fontWeight')
                 || ecModel.get('textStyle.fontWeight'),
+
             gridSize: gridSize,
 
             ellipticity: gridRect.height / gridRect.width,
@@ -124,6 +124,8 @@ echarts.registerLayout(function (ecModel, api) {
             rotationStep: seriesModel.get('rotationStep') * DEGREE_TO_RAD,
 
             drawOutOfBound: seriesModel.get('drawOutOfBound'),
+
+            layoutAnimation: seriesModel.get('layoutAnimation'),
 
             shuffle: false,
 

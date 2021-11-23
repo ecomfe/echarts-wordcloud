@@ -1,8 +1,4 @@
-var echarts = require('echarts/lib/echarts');
-
-function getShallow(model, path) {
-    return model && model.getShallow(path);
-}
+import * as echarts from 'echarts/lib/echarts';
 
 echarts.extendChartView({
 
@@ -18,34 +14,48 @@ echarts.extendChartView({
 
         seriesModel.layoutInstance.ondraw = function (text, size, dataIdx, drawn) {
             var itemModel = data.getItemModel(dataIdx);
-            var textStyleModel = itemModel.getModel('textStyle.normal');
-            var emphasisTextStyleModel = itemModel.getModel('textStyle.emphasis');
+            var textStyleModel = itemModel.getModel('textStyle');
 
             var textEl = new echarts.graphic.Text({
-                style: echarts.graphic.setTextStyle({}, textStyleModel, {
-                    x: drawn.info.fillTextOffsetX,
-                    y: drawn.info.fillTextOffsetY + size * 0.5,
-                    text: text,
-                    textBaseline: 'middle',
-                    textFill: data.getItemVisual(dataIdx, 'color'),
-                    fontSize: size
-                }),
-                scale: [1 / drawn.info.mu, 1 / drawn.info.mu],
-                position: [
-                    (drawn.gx + drawn.info.gw / 2) * gridSize,
-                    (drawn.gy + drawn.info.gh / 2) * gridSize
-                ],
+                style: echarts.helper.createTextStyle(textStyleModel),
+                scaleX: 1 / drawn.info.mu,
+                scaleY: 1 / drawn.info.mu,
+                x: (drawn.gx + drawn.info.gw / 2) * gridSize,
+                y: (drawn.gy + drawn.info.gh / 2) * gridSize,
                 rotation: drawn.rot
+            });
+            textEl.setStyle({
+                x: drawn.info.fillTextOffsetX,
+                y: drawn.info.fillTextOffsetY + size * 0.5,
+                text: text,
+                verticalAlign: 'middle',
+                fill: data.getItemVisual(dataIdx, 'style').fill,
+                fontSize: size
             });
 
             group.add(textEl);
 
             data.setItemGraphicEl(dataIdx, textEl);
 
-            echarts.graphic.setHoverStyle(
+            textEl.ensureState('emphasis').style = echarts.helper.createTextStyle(itemModel.getModel(['emphasis', 'textStyle']), {
+                state: 'emphasis'
+            });
+            textEl.ensureState('blur').style = echarts.helper.createTextStyle(itemModel.getModel(['blur', 'textStyle']), {
+                state: 'blur'
+            });
+
+            echarts.helper.enableHoverEmphasis(
                 textEl,
-                echarts.graphic.setTextStyle({}, emphasisTextStyleModel, null, {forMerge: true}, true)
+                itemModel.get(['emphasis', 'focus']),
+                itemModel.get(['emphasis', 'blurScope'])
             );
+
+            textEl.stateTransition = {
+                duration: seriesModel.get('animation') ? seriesModel.get(['stateAnimation', 'duration']) : 0,
+                easing: seriesModel.get(['stateAnimation', 'easing'])
+            };
+            // TODO
+            textEl.__highDownDispatcher = true;
         };
 
         this._model = seriesModel;
