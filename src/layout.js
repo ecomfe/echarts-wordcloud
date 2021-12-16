@@ -226,13 +226,15 @@ var WordCloud = function WordCloud(elements, options) {
     maskColor: 'rgba(255,0,0,0.3)',
     maskGapWidth: 0.3,
 
+    layoutAnimation: true,
+
     wait: 0,
     abortThreshold: 0, // disabled
     abort: function noop() {},
 
     minRotation: -Math.PI / 2,
     maxRotation: Math.PI / 2,
-    rotationSteps: 0,
+    rotationStep: 0.1,
 
     shuffle: true,
     rotateRatio: 0.1,
