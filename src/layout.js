@@ -2,7 +2,7 @@
  * wordcloud2.js
  * http://timdream.org/wordcloud2.js/
  *
- * Copyright 2011 - 2013 Tim Chien
+ * Copyright 2011 - 2019 Tim Guan-tin Chien and contributors.
  * Released under the MIT license
  */
 
@@ -104,6 +104,9 @@ var isSupported = (function isSupported() {
   }
 
   var ctx = canvas.getContext('2d');
+  if (!ctx) {
+    return false;
+  }
   if (!ctx.getImageData) {
     return false;
   }
@@ -154,20 +157,35 @@ var minFontSize = (function getMinFontSize() {
   return 0;
 })();
 
+var getItemExtraData = function (item) {
+  if (Array.isArray(item)) {
+    var itemCopy = item.slice();
+    // remove data we already have (word and weight)
+    itemCopy.splice(0, 2);
+    return itemCopy;
+  } else {
+    return [];
+  }
+};
+
 // Based on http://jsfromhell.com/array/shuffle
 var shuffleArray = function shuffleArray(arr) {
-  for (
-    var j, x, i = arr.length;
-    i;
-    j = Math.floor(Math.random() * i), x = arr[--i], arr[i] = arr[j], arr[j] = x
-  ) {}
+  for (var j, x, i = arr.length; i; ) {
+    j = Math.floor(Math.random() * i);
+    x = arr[--i];
+    arr[i] = arr[j];
+    arr[j] = x;
+  }
   return arr;
 };
 
+var timer = {};
 var WordCloud = function WordCloud(elements, options) {
   if (!isSupported) {
     return;
   }
+
+  var timerId = Math.floor(Math.random() * Date.now());
 
   if (!Array.isArray(elements)) {
     elements = [elements];
@@ -177,10 +195,12 @@ var WordCloud = function WordCloud(elements, options) {
     if (typeof el === 'string') {
       elements[i] = document.getElementById(el);
       if (!elements[i]) {
-        throw 'The element id specified is not found.';
+        throw new Error('The element id specified is not found.');
       }
     } else if (!el.tagName && !el.appendChild) {
-      throw 'You must pass valid HTML elements, or ID of the element.';
+      throw new Error(
+        'You must pass valid HTML elements, or ID of the element.'
+      );
     }
   });
 
@@ -199,13 +219,12 @@ var WordCloud = function WordCloud(elements, options) {
 
     gridSize: 8,
     drawOutOfBound: false,
+    shrinkToFit: false,
     origin: null,
 
     drawMask: false,
     maskColor: 'rgba(255,0,0,0.3)',
     maskGapWidth: 0.3,
-
-    layoutAnimation: true,
 
     wait: 0,
     abortThreshold: 0, // disabled
@@ -213,7 +232,7 @@ var WordCloud = function WordCloud(elements, options) {
 
     minRotation: -Math.PI / 2,
     maxRotation: Math.PI / 2,
-    rotationStep: 0.1,
+    rotationSteps: 0,
 
     shuffle: true,
     rotateRatio: 0.1,
@@ -239,7 +258,7 @@ var WordCloud = function WordCloud(elements, options) {
   if (typeof settings.weightFactor !== 'function') {
     var factor = settings.weightFactor;
     settings.weightFactor = function weightFactor(pt) {
-      return pt * factor; //in px
+      return pt * factor; // in px
     };
   }
 
@@ -269,13 +288,23 @@ var WordCloud = function WordCloud(elements, options) {
         */
 
       case 'diamond':
-      case 'square':
         // http://www.wolframalpha.com/input/?i=plot+r+%3D+1%2F%28cos%28mod+
         // %28t%2C+PI%2F2%29%29%2Bsin%28mod+%28t%2C+PI%2F2%29%29%29%2C+t+%3D
         // +0+..+2*PI
         settings.shape = function shapeSquare(theta) {
           var thetaPrime = theta % ((2 * Math.PI) / 4);
           return 1 / (Math.cos(thetaPrime) + Math.sin(thetaPrime));
+        };
+        break;
+
+      case 'square':
+        // http://www.wolframalpha.com/input/?i=plot+r+%3D+min(1%2Fabs(cos(t
+        // )),1%2Fabs(sin(t)))),+t+%3D+0+..+2*PI
+        settings.shape = function shapeSquare(theta) {
+          return Math.min(
+            1 / Math.abs(Math.cos(theta)),
+            1 / Math.abs(Math.sin(theta))
+          );
         };
         break;
 
@@ -337,8 +366,8 @@ var WordCloud = function WordCloud(elements, options) {
 
   /* normalize rotation settings */
   var rotationRange = Math.abs(settings.maxRotation - settings.minRotation);
+  var rotationSteps = Math.abs(Math.floor(settings.rotationSteps));
   var minRotation = Math.min(settings.maxRotation, settings.minRotation);
-  var rotationStep = settings.rotationStep;
 
   /* information/object available to all functions, set when start() */
   var grid, // 2d array containing filling information
@@ -352,7 +381,7 @@ var WordCloud = function WordCloud(elements, options) {
 
   /* function for getting the color of the text */
   var getTextColor;
-  function random_hsl_color(min, max) {
+  function randomHslColor(min, max) {
     return (
       'hsl(' +
       (Math.random() * 360).toFixed() +
@@ -366,13 +395,13 @@ var WordCloud = function WordCloud(elements, options) {
   switch (settings.color) {
     case 'random-dark':
       getTextColor = function getRandomDarkColor() {
-        return random_hsl_color(10, 50);
+        return randomHslColor(10, 50);
       };
       break;
 
     case 'random-light':
       getTextColor = function getRandomLightColor() {
-        return random_hsl_color(50, 90);
+        return randomHslColor(50, 90);
       };
       break;
 
@@ -381,6 +410,12 @@ var WordCloud = function WordCloud(elements, options) {
         getTextColor = settings.color;
       }
       break;
+  }
+
+  /* function for getting the font-weight of the text */
+  var getTextFontWeight;
+  if (typeof settings.fontWeight === 'function') {
+    getTextFontWeight = settings.fontWeight;
   }
 
   /* function for getting the classes of the text */
@@ -505,13 +540,24 @@ var WordCloud = function WordCloud(elements, options) {
       return minRotation;
     }
 
-    return (
-      minRotation +
-      Math.round((Math.random() * rotationRange) / rotationStep) * rotationStep
-    );
+    if (rotationSteps > 0) {
+      // Min rotation + zero or more steps * span of one step
+      return (
+        minRotation +
+        (Math.floor(Math.random() * rotationSteps) * rotationRange) /
+          (rotationSteps - 1)
+      );
+    } else {
+      return minRotation + Math.random() * rotationRange;
+    }
   };
 
-  var getTextInfo = function getTextInfo(word, weight, rotateDeg) {
+  var getTextInfo = function getTextInfo(
+    word,
+    weight,
+    rotateDeg,
+    extraDataArray
+  ) {
     // calculate the acutal font size
     // fontSize === 0 means weightFactor function wants the text skipped,
     // and size < minSize means we cannot draw the text.
@@ -535,11 +581,19 @@ var WordCloud = function WordCloud(elements, options) {
       })();
     }
 
+    // Get fontWeight that will be used to set fctx.font
+    var fontWeight;
+    if (getTextFontWeight) {
+      fontWeight = getTextFontWeight(word, weight, fontSize, extraDataArray);
+    } else {
+      fontWeight = settings.fontWeight;
+    }
+
     var fcanvas = document.createElement('canvas');
     var fctx = fcanvas.getContext('2d', { willReadFrequently: true });
 
     fctx.font =
-      settings.fontWeight +
+      fontWeight +
       ' ' +
       (fontSize * mu).toString(10) +
       'px ' +
@@ -605,7 +659,7 @@ var WordCloud = function WordCloud(elements, options) {
     // Once the width/height is set, ctx info will be reset.
     // Set it again here.
     fctx.font =
-      settings.fontWeight +
+      fontWeight +
       ' ' +
       (fontSize * mu).toString(10) +
       'px ' +
@@ -640,47 +694,44 @@ var WordCloud = function WordCloud(elements, options) {
 
     // Read the pixels and save the information to the occupied array
     var occupied = [];
-    var gx = cgw,
-      gy,
-      x,
-      y;
+    var gx = cgw;
+    var gy, x, y;
     var bounds = [cgh / 2, cgw / 2, cgh / 2, cgw / 2];
     while (gx--) {
       gy = cgh;
       while (gy--) {
         y = g;
-        singleGridLoop: {
-          while (y--) {
-            x = g;
-            while (x--) {
-              if (imageData[((gy * g + y) * width + (gx * g + x)) * 4 + 3]) {
-                occupied.push([gx, gy]);
+        /* eslint no-labels: ['error', { 'allowLoop': true }] */
+        singleGridLoop: while (y--) {
+          x = g;
+          while (x--) {
+            if (imageData[((gy * g + y) * width + (gx * g + x)) * 4 + 3]) {
+              occupied.push([gx, gy]);
 
-                if (gx < bounds[3]) {
-                  bounds[3] = gx;
-                }
-                if (gx > bounds[1]) {
-                  bounds[1] = gx;
-                }
-                if (gy < bounds[0]) {
-                  bounds[0] = gy;
-                }
-                if (gy > bounds[2]) {
-                  bounds[2] = gy;
-                }
-
-                if (debug) {
-                  fctx.fillStyle = 'rgba(255, 0, 0, 0.5)';
-                  fctx.fillRect(gx * g, gy * g, g - 0.5, g - 0.5);
-                }
-                break singleGridLoop;
+              if (gx < bounds[3]) {
+                bounds[3] = gx;
               }
+              if (gx > bounds[1]) {
+                bounds[1] = gx;
+              }
+              if (gy < bounds[0]) {
+                bounds[0] = gy;
+              }
+              if (gy > bounds[2]) {
+                bounds[2] = gy;
+              }
+
+              if (debug) {
+                fctx.fillStyle = 'rgba(255, 0, 0, 0.5)';
+                fctx.fillRect(gx * g, gy * g, g - 0.5, g - 0.5);
+              }
+              break singleGridLoop;
             }
           }
-          if (debug) {
-            fctx.fillStyle = 'rgba(0, 0, 255, 0.5)';
-            fctx.fillRect(gx * g, gy * g, g - 0.5, g - 0.5);
-          }
+        }
+        if (debug) {
+          fctx.fillStyle = 'rgba(0, 0, 255, 0.5)';
+          fctx.fillRect(gx * g, gy * g, g - 0.5, g - 0.5);
         }
       }
     }
@@ -743,31 +794,38 @@ var WordCloud = function WordCloud(elements, options) {
     distance,
     theta,
     rotateDeg,
-    attributes
+    attributes,
+    extraDataArray
   ) {
     var fontSize = info.fontSize;
     var color;
     if (getTextColor) {
-      color = getTextColor(word, weight, fontSize, distance, theta);
+      color = getTextColor(
+        word,
+        weight,
+        fontSize,
+        distance,
+        theta,
+        extraDataArray
+      );
     } else {
       color = settings.color;
     }
 
+    // get fontWeight that will be used to set ctx.font and font style rule
+    var fontWeight;
+    if (getTextFontWeight) {
+      fontWeight = getTextFontWeight(word, weight, fontSize, extraDataArray);
+    } else {
+      fontWeight = settings.fontWeight;
+    }
+
     var classes;
     if (getTextClasses) {
-      classes = getTextClasses(word, weight, fontSize, distance, theta);
+      classes = getTextClasses(word, weight, fontSize, extraDataArray);
     } else {
       classes = settings.classes;
     }
-
-    var dimension;
-    var bounds = info.bounds;
-    dimension = {
-      x: (gx + bounds[3]) * g,
-      y: (gy + bounds[0]) * g,
-      w: (bounds[1] - bounds[3] + 1) * g,
-      h: (bounds[2] - bounds[0] + 1) * g
-    };
 
     elements.forEach(function (el) {
       if (el.getContext) {
@@ -779,7 +837,7 @@ var WordCloud = function WordCloud(elements, options) {
         ctx.scale(1 / mu, 1 / mu);
 
         ctx.font =
-          settings.fontWeight +
+          fontWeight +
           ' ' +
           (fontSize * mu).toString(10) +
           'px ' +
@@ -832,11 +890,7 @@ var WordCloud = function WordCloud(elements, options) {
           position: 'absolute',
           display: 'block',
           font:
-            settings.fontWeight +
-            ' ' +
-            fontSize * info.mu +
-            'px ' +
-            settings.fontFamily,
+            fontWeight + ' ' + fontSize * info.mu + 'px ' + settings.fontFamily,
           left: (gx + info.gw / 2) * g + info.fillTextOffsetX + 'px',
           top: (gy + info.gh / 2) * g + info.fillTextOffsetY + 'px',
           width: info.fillTextWidth + 'px',
@@ -943,8 +997,10 @@ var WordCloud = function WordCloud(elements, options) {
     }
     var rotateDeg = getRotateDeg();
 
+    var extraDataArray = getItemExtraData(item);
+
     // get info needed to put the text onto the canvas
-    var info = getTextInfo(word, weight, rotateDeg);
+    var info = getTextInfo(word, weight, rotateDeg, extraDataArray);
 
     // not getting the info means we shouldn't be drawing this one.
     if (!info) {
@@ -958,7 +1014,7 @@ var WordCloud = function WordCloud(elements, options) {
     // If drawOutOfBound is set to false,
     // skip the loop if we have already know the bounding box of
     // word is larger than the canvas.
-    if (!settings.drawOutOfBound) {
+    if (!settings.drawOutOfBound && !settings.shrinkToFit) {
       var bounds = info.bounds;
       if (bounds[1] - bounds[3] + 1 > ngx || bounds[2] - bounds[0] + 1 > ngy) {
         return false;
@@ -991,7 +1047,8 @@ var WordCloud = function WordCloud(elements, options) {
         maxRadius - r,
         gxy[2],
         rotateDeg,
-        attributes
+        attributes,
+        extraDataArray
       );
 
       // Mark the spaces on the grid as filled
@@ -1028,6 +1085,15 @@ var WordCloud = function WordCloud(elements, options) {
       //   // leave putWord() and return true
       //   return true;
       // }
+
+      if (settings.shrinkToFit) {
+        if (Array.isArray(item)) {
+          item[1] = (item[1] * 3) / 4;
+        } else {
+          item.weight = (item.weight * 3) / 4;
+        }
+        return putWord(item);
+      }
     }
     // we tried all distances but text won't fit, return null
     return null;
@@ -1035,18 +1101,20 @@ var WordCloud = function WordCloud(elements, options) {
 
   /* Send DOM event to all elements. Will stop sending event and return
        if the previous one is canceled (for cancelable events). */
-  var sendEvent = function sendEvent(type, cancelable, detail) {
+  var sendEvent = function sendEvent(type, cancelable, details) {
     if (cancelable) {
       return !elements.some(function (el) {
-        var evt = document.createEvent('CustomEvent');
-        evt.initCustomEvent(type, true, cancelable, detail || {});
-        return !el.dispatchEvent(evt);
+        var event = new CustomEvent(type, {
+          detail: details || {}
+        });
+        return !el.dispatchEvent(event);
       }, this);
     } else {
       elements.forEach(function (el) {
-        var evt = document.createEvent('CustomEvent');
-        evt.initCustomEvent(type, true, cancelable, detail || {});
-        el.dispatchEvent(evt);
+        var event = new CustomEvent(type, {
+          detail: details || {}
+        });
+        el.dispatchEvent(event);
       }, this);
     }
   };
@@ -1131,6 +1199,7 @@ var WordCloud = function WordCloud(elements, options) {
         gy = ngy;
         while (gy--) {
           y = g;
+          /* eslint no-labels: ['error', { 'allowLoop': true }] */
           singleGridLoop: while (y--) {
             x = g;
             while (x--) {
@@ -1219,22 +1288,22 @@ var WordCloud = function WordCloud(elements, options) {
 
     var anotherWordCloudStart = function anotherWordCloudStart() {
       removeEventListener('wordcloudstart', anotherWordCloudStart);
-      stoppingFunction(timer);
+      stoppingFunction(timer[timerId]);
     };
 
     addEventListener('wordcloudstart', anotherWordCloudStart);
 
     // At least wait the following code before call the first iteration.
-    var timer = (settings.layoutAnimation ? loopingFunction : setTimeout)(
+    timer[timerId] = (settings.layoutAnimation ? loopingFunction : setTimeout)(
       function loop() {
         if (!layouting) {
           return;
         }
         if (i >= settings.list.length) {
-          stoppingFunction(timer);
+          stoppingFunction(timer[timerId]);
           sendEvent('wordcloudstop', false);
           removeEventListener('wordcloudstart', anotherWordCloudStart);
-
+          delete timer[timerId];
           return;
         }
         escapeTime = new Date().getTime();
@@ -1244,7 +1313,7 @@ var WordCloud = function WordCloud(elements, options) {
           drawn: drawn
         });
         if (exceedTime() || canceled) {
-          stoppingFunction(timer);
+          stoppingFunction(timer[timerId]);
           settings.abort();
           sendEvent('wordcloudabort', false);
           sendEvent('wordcloudstop', false);
@@ -1252,7 +1321,7 @@ var WordCloud = function WordCloud(elements, options) {
           return;
         }
         i++;
-        timer = loopingFunction(loop, settings.wait);
+        timer[timerId] = loopingFunction(loop, settings.wait);
       },
       settings.wait
     );
