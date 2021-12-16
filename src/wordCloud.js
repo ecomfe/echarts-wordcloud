@@ -123,6 +123,7 @@ echarts.registerLayout(function (ecModel, api) {
       rotationStep: seriesModel.get('rotationStep') * DEGREE_TO_RAD,
 
       drawOutOfBound: seriesModel.get('drawOutOfBound'),
+      shrinkToFit: seriesModel.get('shrinkToFit'),
 
       layoutAnimation: seriesModel.get('layoutAnimation'),
 

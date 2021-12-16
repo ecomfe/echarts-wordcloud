@@ -49,6 +49,7 @@ echarts.extendSeriesModel({
     gridSize: 8,
 
     drawOutOfBound: false,
+    shrinkToFit: false,
 
     textStyle: {
       fontWeight: 'normal'
