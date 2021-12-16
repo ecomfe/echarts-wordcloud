@@ -19,6 +19,7 @@
   },
   "devDependencies": {
     "echarts": "^5.0.1",
+    "prettier": "^2.5.1",
     "webpack": "^5.11.1",
     "webpack-cli": "^4.3.1"
   }
