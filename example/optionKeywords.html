@@ -1,7 +1,7 @@
 <html>
     <head>
         <meta charset="utf-8">
-        <script src='https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js'></script>
+        <script src='http://localhost/echarts/dist/echarts.js'></script>
 
         <!-- <script src="../../echarts/dist/echarts.js"></script> -->
         <script src='../dist/echarts-wordcloud.js'></script>
@@ -377,6 +377,8 @@
                     shape: 'pentagon',
                     maskImage: maskImage,
                     drawOutOfBound: false,
+                    // layoutAnimation: true,
+                    keepAspect: true,
                     textStyle: {
                         fontWeight: 'bold',
                         color: function () {
