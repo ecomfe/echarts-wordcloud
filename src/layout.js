@@ -368,8 +368,8 @@ var WordCloud = function WordCloud(elements, options) {
 
   /* normalize rotation settings */
   var rotationRange = Math.abs(settings.maxRotation - settings.minRotation);
-  var rotationSteps = Math.abs(Math.floor(settings.rotationSteps));
   var minRotation = Math.min(settings.maxRotation, settings.minRotation);
+  var rotationStep = settings.rotationStep;
 
   /* information/object available to all functions, set when start() */
   var grid, // 2d array containing filling information
@@ -542,16 +542,7 @@ var WordCloud = function WordCloud(elements, options) {
       return minRotation;
     }
 
-    if (rotationSteps > 0) {
-      // Min rotation + zero or more steps * span of one step
-      return (
-        minRotation +
-        (Math.floor(Math.random() * rotationSteps) * rotationRange) /
-          (rotationSteps - 1)
-      );
-    } else {
-      return minRotation + Math.random() * rotationRange;
-    }
+    return minRotation + Math.round(Math.random() * rotationRange / rotationStep) * rotationStep;
   };
 
   var getTextInfo = function getTextInfo(
