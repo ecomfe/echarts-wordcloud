@@ -1139,7 +1139,7 @@ var WordCloud = function WordCloud(elements, options) {
       : [ngx / 2, ngy / 2];
 
     // Maxium radius to look for space
-    maxRadius = Math.floor(Math.max(ngx, ngy) / 2);
+    maxRadius = Math.floor(Math.sqrt(ngx * ngx + ngy * ngy));
 
     /* Clear the canvas only if the clearCanvas is set,
          if not, update the grid to the current canvas state */
