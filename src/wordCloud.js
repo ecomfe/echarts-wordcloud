@@ -61,6 +61,12 @@ echarts.registerLayout(function (ecModel, api) {
         height: api.getHeight()
       }
     );
+
+    var keepAspect = seriesModel.get('keepAspect');
+    var maskImage = seriesModel.get('maskImage');
+    var ratio = maskImage ? maskImage.width / maskImage.height : 1;
+    keepAspect && adjustRectAspect(gridRect, ratio);
+
     var data = seriesModel.getData();
 
     var canvas = document.createElement('canvas');
@@ -68,7 +74,6 @@ echarts.registerLayout(function (ecModel, api) {
     canvas.height = gridRect.height;
 
     var ctx = canvas.getContext('2d');
-    var maskImage = seriesModel.get('maskImage');
     if (maskImage) {
       try {
         ctx.drawImage(maskImage, 0, 0, canvas.width, canvas.height);
@@ -192,3 +197,17 @@ echarts.registerPreprocessor(function (option) {
       });
   }
 });
+
+function adjustRectAspect(gridRect, aspect) {
+  // var outerWidth = gridRect.width + gridRect.x * 2;
+  // var outerHeight = gridRect.height + gridRect.y * 2;
+  var width = gridRect.width;
+  var height = gridRect.height;
+  if (width > height * aspect) {
+    gridRect.x += (width - height * aspect) / 2;
+    gridRect.width = height * aspect;
+  } else {
+    gridRect.y += (height - width / aspect) / 2;
+    gridRect.height = width / aspect;
+  }
+}

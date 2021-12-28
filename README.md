@@ -4,7 +4,6 @@ Third-party Wordcloud extension based on [wordcloud2.js](https://github.com/timd
 
 ![](./example/word-cloud.png)
 
-
 ## Examples
 
 [Google Trends](https://ecomfe.github.io/echarts-wordcloud/example/wordCloud.html)
@@ -26,7 +25,7 @@ npm install echarts-wordcloud
 ```
 
 ```js
-import * as echarts from 'echarts'
+import * as echarts from 'echarts';
 import 'echarts-wordcloud';
 ```
 
@@ -51,6 +50,10 @@ chart.setOption({
         // alias of square), triangle-forward, triangle, (alias of triangle-upright, pentagon, and star.
 
         shape: 'circle',
+
+        // Keep aspect ratio of maskImage or 1:1 for shapes
+
+        keepAspect: false,
 
         // A silhouette image which the white area will be excluded from drawing texts.
         // The shape option will continue to apply as the shape of the cloud to grow.

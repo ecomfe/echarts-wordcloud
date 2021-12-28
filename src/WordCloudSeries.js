@@ -31,6 +31,7 @@ echarts.extendSeriesModel({
 
     // Shape can be 'circle', 'cardioid', 'diamond', 'triangle-forward', 'triangle', 'pentagon', 'star'
     shape: 'circle',
+    keepAspect: false,
 
     left: 'center',
 
