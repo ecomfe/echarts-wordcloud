@@ -52,7 +52,7 @@ chart.setOption({
         shape: 'circle',
 
         // Keep aspect ratio of maskImage or 1:1 for shapes
-
+        // This option is supported from echarts-wordcloud@2.1.0
         keepAspect: false,
 
         // A silhouette image which the white area will be excluded from drawing texts.
