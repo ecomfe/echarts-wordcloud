@@ -1,6 +1,6 @@
 {
   "name": "echarts-wordcloud",
-  "version": "2.1.0-beta",
+  "version": "2.1.0",
   "description": "ECharts wordcloud extension based on wordcloud2.js",
   "main": "index.js",
   "author": "",
@@ -18,7 +18,7 @@
     "url": "https://github.com/ecomfe/echarts-wordcloud.git"
   },
   "devDependencies": {
-    "echarts": "^5.2.2",
+    "echarts": "^5.4.0",
     "prettier": "^2.5.1",
     "webpack": "^5.11.1",
     "webpack-cli": "^4.3.1"

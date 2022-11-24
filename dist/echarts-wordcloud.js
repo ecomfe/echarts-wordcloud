@@ -621,6 +621,10 @@ var WordCloud = function WordCloud(elements, options) {
     var x = Math.floor((eventX * (canvas.width / rect.width || 1)) / g);
     var y = Math.floor((eventY * (canvas.height / rect.height || 1)) / g);
 
+    if (!infoGrid[x]) {
+      return null
+    }
+
     return infoGrid[x][y];
   };
 
@@ -1147,7 +1151,11 @@ var WordCloud = function WordCloud(elements, options) {
   /* putWord() processes each item on the list,
        calculate it's size and determine it's position, and actually
        put it on the canvas. */
-  var putWord = function putWord(item) {
+  var putWord = function putWord(item, loopIndex) {
+    if (loopIndex > 20) {
+      return null;
+    }
+
     var word, weight, attributes;
     if (Array.isArray(item)) {
       word = item[0];
@@ -1247,16 +1255,17 @@ var WordCloud = function WordCloud(elements, options) {
       //   // leave putWord() and return true
       //   return true;
       // }
-
-      if (settings.shrinkToFit) {
-        if (Array.isArray(item)) {
-          item[1] = (item[1] * 3) / 4;
-        } else {
-          item.weight = (item.weight * 3) / 4;
-        }
-        return putWord(item);
-      }
     }
+
+    if (settings.shrinkToFit) {
+      if (Array.isArray(item)) {
+        item[1] = (item[1] * 3) / 4;
+      } else {
+        item.weight = (item.weight * 3) / 4;
+      }
+      return putWord(item, loopIndex + 1);
+    }
+
     // we tried all distances but text won't fit, return null
     return null;
   };
@@ -1469,7 +1478,7 @@ var WordCloud = function WordCloud(elements, options) {
           return;
         }
         escapeTime = new Date().getTime();
-        var drawn = putWord(settings.list[i]);
+        var drawn = putWord(settings.list[i], 0);
         var canceled = !sendEvent('wordclouddrawn', true, {
           item: settings.list[i],
           drawn: drawn

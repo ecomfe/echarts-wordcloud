@@ -29,7 +29,7 @@ import * as echarts from 'echarts';
 import 'echarts-wordcloud';
 ```
 
-NOTE:
+⚠️ NOTE:
 
 echarts-wordcloud@2 is for echarts@5
 echarts-wordcloud@1 is for echarts@4
@@ -52,7 +52,7 @@ chart.setOption({
         shape: 'circle',
 
         // Keep aspect ratio of maskImage or 1:1 for shapes
-        // This option is supported from echarts-wordcloud@2.1.0
+        // This option is supported since echarts-wordcloud@2.1.0
         keepAspect: false,
 
         // A silhouette image which the white area will be excluded from drawing texts.
@@ -85,9 +85,16 @@ chart.setOption({
 
         gridSize: 8,
 
-        // set to true to allow word being draw partly outside of the canvas.
+        // set to true to allow word to be drawn partly outside of the canvas.
         // Allow word bigger than the size of the canvas to be drawn
+        // This option is supported since echarts-wordcloud@2.1.0
         drawOutOfBound: false,
+
+        // if the font size is too large for the text to be displayed,
+        // whether to shrink the text. If it is set to false, the text will
+        // not be rendered. If it is set to true, the text will be shrinked.
+        // This option is supported since echarts-wordcloud@2.1.0
+        shrinkToFit: false,
 
         // If perform layout animation.
         // NOTE disable it will lead to UI blocking when there is lots of words.
@@ -127,3 +134,13 @@ chart.setOption({
     }]
 });
 ```
+
+## Changelog
+
+### 2.0.0
+
+- [chore] Support Apache ECharts 5
+- [chore] Sync with the latest wordcloud2.js and use prettier to format the code
+- [feature] Add `keepAspect` option to keep aspect ratio of maskImage or 1:1 for shapes
+- [feature] Add `drawOutOfBound` option to allow words to be drawn partly outside of the canvas
+- [feature] Add `shrinkToFit` option to shrink the text if the font size is too large for the text to be displayed
