@@ -32,6 +32,7 @@ import 'echarts-wordcloud';
 ⚠️ NOTE:
 
 echarts-wordcloud@2 is for echarts@5
+
 echarts-wordcloud@1 is for echarts@4
 
 ## Usage
@@ -137,9 +138,9 @@ chart.setOption({
 
 ## Changelog
 
-### 2.0.0
+### 2.1.0
 
-- [chore] Support Apache ECharts 5
+- [chore] Update Apache ECharts version
 - [chore] Sync with the latest wordcloud2.js and use prettier to format the code
 - [feature] Add `keepAspect` option to keep aspect ratio of maskImage or 1:1 for shapes
 - [feature] Add `drawOutOfBound` option to allow words to be drawn partly outside of the canvas
