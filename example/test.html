@@ -1,0 +1,66 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        <script src='https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js'></script>
+        <!-- <script src="../../echarts/dist/echarts.js"></script> -->
+        <script src='../dist/echarts-wordcloud.js'></script>
+    </head>
+    <body>
+        <style>
+            html, body {
+                margin: 0;
+                position: relative;
+            }
+            #main {
+                width: 500px;
+                height: 400px;
+                margin: 50px;
+                border: 1px solid #eee;
+            }
+            #border {
+                position: absolute;
+                left: 100px;
+                top: 50px;
+                width: 400px;
+                height: 300px;
+                border: 1px solid #f00;
+            }
+        </style>
+        <div id='main'></div>
+        <div id='border'></div>
+        <h3>Expect text with 0 to 9 to be displayed all</h3>
+        <script>
+            var chart = echarts.init(document.getElementById('main'));
+
+            var data = [];
+            for (let i = 0; i < 10; ++i) {
+                data.push({
+                    name: (i % 2 ? 'WordCloud' : 'WWWWWWWWWWordCloud') + i,
+                    value: (30 - i) * (30 - i)
+                });
+            }
+
+            var option = {
+                tooltip: {},
+                series: [ {
+                    type: 'wordCloud',
+                    gridSize: 2,
+                    sizeRange: [12, 60],
+                    rotationRange: [0, 0],
+                    shape: 'square',
+                    width: 400,
+                    height: 300,
+                    left: 50,
+                    top: 50,
+                    drawOutOfBound: false,
+                    shrinkToFit: true,
+                    data
+                } ]
+            };
+
+            chart.setOption(option);
+
+            window.onresize = chart.resize;
+        </script>
+    </body>
+</html>
