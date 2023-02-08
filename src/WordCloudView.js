@@ -14,6 +14,7 @@ echarts.extendChartView({
     seriesModel.layoutInstance.ondraw = function (text, size, dataIdx, drawn) {
       var itemModel = data.getItemModel(dataIdx);
       var textStyleModel = itemModel.getModel('textStyle');
+      var itemVisualStyle = data.getItemVisual(dataIdx, 'style');
 
       var textEl = new echarts.graphic.Text({
         style: echarts.helper.createTextStyle(textStyleModel),
@@ -28,7 +29,8 @@ echarts.extendChartView({
         y: drawn.info.fillTextOffsetY + size * 0.5,
         text: text,
         verticalAlign: 'middle',
-        fill: data.getItemVisual(dataIdx, 'style').fill,
+        fill: itemVisualStyle.fill,
+        opacity: itemVisualStyle.opacity,
         fontSize: size
       });
 

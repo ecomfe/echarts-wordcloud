@@ -18,7 +18,7 @@ echarts.extendSeriesModel({
 
   getInitialData: function (option, ecModel) {
     var dimensions = echarts.helper.createDimensions(option.data, {
-      coordDimensions: ['value']
+      coordDimensions: option.dimensions
     });
     var list = new echarts.List(dimensions, this);
     list.initData(option.data);
@@ -40,6 +40,8 @@ echarts.extendSeriesModel({
     width: '70%',
 
     height: '80%',
+    
+    dimensions: ['value'],
 
     sizeRange: [12, 60],
 
