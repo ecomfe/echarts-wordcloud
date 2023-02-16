@@ -44,7 +44,7 @@ external_echarts_.extendSeriesModel({
 
   getInitialData: function (option, ecModel) {
     var dimensions = external_echarts_.helper.createDimensions(option.data, {
-      coordDimensions: ['value']
+      coordDimensions: option.dimensions
     });
     var list = new external_echarts_.List(dimensions, this);
     list.initData(option.data);
@@ -66,6 +66,8 @@ external_echarts_.extendSeriesModel({
     width: '70%',
 
     height: '80%',
+    
+    dimensions: ['value'],
 
     sizeRange: [12, 60],
 
@@ -101,6 +103,7 @@ external_echarts_.extendChartView({
     seriesModel.layoutInstance.ondraw = function (text, size, dataIdx, drawn) {
       var itemModel = data.getItemModel(dataIdx);
       var textStyleModel = itemModel.getModel('textStyle');
+      var itemVisualStyle = data.getItemVisual(dataIdx, 'style');
 
       var textEl = new external_echarts_.graphic.Text({
         style: external_echarts_.helper.createTextStyle(textStyleModel),
@@ -115,7 +118,8 @@ external_echarts_.extendChartView({
         y: drawn.info.fillTextOffsetY + size * 0.5,
         text: text,
         verticalAlign: 'middle',
-        fill: data.getItemVisual(dataIdx, 'style').fill,
+        fill: itemVisualStyle.fill,
+        opacity: itemVisualStyle.opacity,
         fontSize: size
       });
 
