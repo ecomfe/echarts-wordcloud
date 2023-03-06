@@ -33,6 +33,9 @@ echarts.extendSeriesModel({
     shape: 'circle',
     keepAspect: false,
 
+    z: 100,
+    zlevel: 100,
+
     left: 'center',
 
     top: 'center',
