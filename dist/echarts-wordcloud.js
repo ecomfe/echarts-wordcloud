@@ -7,17 +7,66 @@
 		exports["echarts-wordcloud"] = factory(require("echarts"));
 	else
 		root["echarts-wordcloud"] = factory(root["echarts"]);
-})(self, function(__WEBPACK_EXTERNAL_MODULE_echarts_lib_echarts__) {
+})(self, (__WEBPACK_EXTERNAL_MODULE_echarts_lib_echarts__) => {
 return /******/ (() => { // webpackBootstrap
 /******/ 	"use strict";
 /******/ 	var __webpack_modules__ = ({
 
-/***/ "./index.js":
+/***/ "echarts/lib/echarts":
+/*!**************************!*\
+  !*** external "echarts" ***!
+  \**************************/
+/***/ ((module) => {
+
+module.exports = __WEBPACK_EXTERNAL_MODULE_echarts_lib_echarts__;
+
+/***/ })
+
+/******/ 	});
+/************************************************************************/
+/******/ 	// The module cache
+/******/ 	var __webpack_module_cache__ = {};
+/******/ 	
+/******/ 	// The require function
+/******/ 	function __webpack_require__(moduleId) {
+/******/ 		// Check if module is in cache
+/******/ 		var cachedModule = __webpack_module_cache__[moduleId];
+/******/ 		if (cachedModule !== undefined) {
+/******/ 			return cachedModule.exports;
+/******/ 		}
+/******/ 		// Create a new module (and put it into the cache)
+/******/ 		var module = __webpack_module_cache__[moduleId] = {
+/******/ 			// no module.id needed
+/******/ 			// no module.loaded needed
+/******/ 			exports: {}
+/******/ 		};
+/******/ 	
+/******/ 		// Execute the module function
+/******/ 		__webpack_modules__[moduleId](module, module.exports, __webpack_require__);
+/******/ 	
+/******/ 		// Return the exports of the module
+/******/ 		return module.exports;
+/******/ 	}
+/******/ 	
+/************************************************************************/
+/******/ 	/* webpack/runtime/make namespace object */
+/******/ 	(() => {
+/******/ 		// define __esModule on exports
+/******/ 		__webpack_require__.r = (exports) => {
+/******/ 			if(typeof Symbol !== 'undefined' && Symbol.toStringTag) {
+/******/ 				Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
+/******/ 			}
+/******/ 			Object.defineProperty(exports, '__esModule', { value: true });
+/******/ 		};
+/******/ 	})();
+/******/ 	
+/************************************************************************/
+var __webpack_exports__ = {};
+// This entry need to be wrapped in an IIFE because it need to be isolated against other modules in the chunk.
+(() => {
 /*!******************************!*\
   !*** ./index.js + 4 modules ***!
   \******************************/
-/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
-
 // ESM COMPAT FLAG
 __webpack_require__.r(__webpack_exports__);
 
@@ -58,6 +107,9 @@ external_echarts_.extendSeriesModel({
     // Shape can be 'circle', 'cardioid', 'diamond', 'triangle-forward', 'triangle', 'pentagon', 'star'
     shape: 'circle',
     keepAspect: false,
+
+    z: 100,
+    zlevel: 100,
 
     left: 'center',
 
@@ -108,6 +160,7 @@ external_echarts_.extendChartView({
         scaleY: 1 / drawn.info.mu,
         x: (drawn.gx + drawn.info.gw / 2) * gridSize,
         y: (drawn.gy + drawn.info.gh / 2) * gridSize,
+        z: 1000,
         rotation: drawn.rot
       });
       textEl.setStyle({
@@ -396,6 +449,8 @@ var WordCloud = function WordCloud(elements, options) {
     maskGapWidth: 0.3,
 
     layoutAnimation: true,
+
+    z:10,
 
     wait: 0,
     abortThreshold: 0, // disabled
@@ -1043,6 +1098,7 @@ var WordCloud = function WordCloud(elements, options) {
         var span = document.createElement('span');
         var transformRule = '';
         transformRule = 'rotate(' + (-rotateDeg / Math.PI) * 180 + 'deg) ';
+        transformRule += 'translateZ(100px) ';
         if (info.mu !== 1) {
           transformRule +=
             'translateX(-' +
@@ -1572,10 +1628,14 @@ external_echarts_.registerLayout(function (ecModel, api) {
       }
     );
 
+    var z = seriesModel.get('z');
+
     var keepAspect = seriesModel.get('keepAspect');
     var maskImage = seriesModel.get('maskImage');
     var ratio = maskImage ? maskImage.width / maskImage.height : 1;
     keepAspect && adjustRectAspect(gridRect, ratio);
+
+    gridRect.z;
 
     var data = seriesModel.getData();
 
@@ -1713,6 +1773,7 @@ function adjustRectAspect(gridRect, aspect) {
   // var outerHeight = gridRect.height + gridRect.y * 2;
   var width = gridRect.width;
   var height = gridRect.height;
+  gridRect.z = 1000;
   if (width > height * aspect) {
     gridRect.x += (width - height * aspect) / 2;
     gridRect.width = height * aspect;
@@ -1725,61 +1786,9 @@ function adjustRectAspect(gridRect, aspect) {
 ;// CONCATENATED MODULE: ./index.js
 
 
+})();
 
-/***/ }),
-
-/***/ "echarts/lib/echarts":
-/*!**************************!*\
-  !*** external "echarts" ***!
-  \**************************/
-/***/ ((module) => {
-
-module.exports = __WEBPACK_EXTERNAL_MODULE_echarts_lib_echarts__;
-
-/***/ })
-
-/******/ 	});
-/************************************************************************/
-/******/ 	// The module cache
-/******/ 	var __webpack_module_cache__ = {};
-/******/ 	
-/******/ 	// The require function
-/******/ 	function __webpack_require__(moduleId) {
-/******/ 		// Check if module is in cache
-/******/ 		if(__webpack_module_cache__[moduleId]) {
-/******/ 			return __webpack_module_cache__[moduleId].exports;
-/******/ 		}
-/******/ 		// Create a new module (and put it into the cache)
-/******/ 		var module = __webpack_module_cache__[moduleId] = {
-/******/ 			// no module.id needed
-/******/ 			// no module.loaded needed
-/******/ 			exports: {}
-/******/ 		};
-/******/ 	
-/******/ 		// Execute the module function
-/******/ 		__webpack_modules__[moduleId](module, module.exports, __webpack_require__);
-/******/ 	
-/******/ 		// Return the exports of the module
-/******/ 		return module.exports;
-/******/ 	}
-/******/ 	
-/************************************************************************/
-/******/ 	/* webpack/runtime/make namespace object */
-/******/ 	(() => {
-/******/ 		// define __esModule on exports
-/******/ 		__webpack_require__.r = (exports) => {
-/******/ 			if(typeof Symbol !== 'undefined' && Symbol.toStringTag) {
-/******/ 				Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
-/******/ 			}
-/******/ 			Object.defineProperty(exports, '__esModule', { value: true });
-/******/ 		};
-/******/ 	})();
-/******/ 	
-/************************************************************************/
-/******/ 	// module exports must be returned from runtime so entry inlining is disabled
-/******/ 	// startup
-/******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__("./index.js");
+/******/ 	return __webpack_exports__;
 /******/ })()
 ;
 });

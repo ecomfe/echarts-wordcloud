@@ -62,10 +62,14 @@ echarts.registerLayout(function (ecModel, api) {
       }
     );
 
+    var z = seriesModel.get('z');
+
     var keepAspect = seriesModel.get('keepAspect');
     var maskImage = seriesModel.get('maskImage');
     var ratio = maskImage ? maskImage.width / maskImage.height : 1;
     keepAspect && adjustRectAspect(gridRect, ratio);
+
+    gridRect.z;
 
     var data = seriesModel.getData();
 
@@ -203,6 +207,7 @@ function adjustRectAspect(gridRect, aspect) {
   // var outerHeight = gridRect.height + gridRect.y * 2;
   var width = gridRect.width;
   var height = gridRect.height;
+  gridRect.z = 1000;
   if (width > height * aspect) {
     gridRect.x += (width - height * aspect) / 2;
     gridRect.width = height * aspect;

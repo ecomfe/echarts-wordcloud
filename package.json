@@ -8,7 +8,8 @@
   "scripts": {
     "dev": "npx webpack --mode development --watch",
     "build": "npx webpack --mode development",
-    "release": "npx webpack --mode production && npx webpack --mode development"
+    "release": "npx webpack --mode production && npx webpack --mode development",
+    "bundle": "builder build bundle"
   },
   "peerDependencies": {
     "echarts": "^5.0.1"
@@ -18,9 +19,13 @@
     "url": "https://github.com/ecomfe/echarts-wordcloud.git"
   },
   "devDependencies": {
-    "echarts": "^5.4.0",
+    "echarts": "^5.4.1",
     "prettier": "^2.5.1",
     "webpack": "^5.11.1",
     "webpack-cli": "^4.3.1"
+  },
+  "dependencies": {
+    "builder": "^5.0.0",
+    "echarts-wordcloud": "^2.1.0"
   }
 }
