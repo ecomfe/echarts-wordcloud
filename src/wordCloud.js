@@ -136,7 +136,7 @@ echarts.registerLayout(function (ecModel, api) {
 
       shape: seriesModel.get('shape'),
 
-	    randomSeed: seriesModel.get('randomSeed')
+      randomSeed: seriesModel.get('randomSeed')
     });
 
     function onWordCloudDrawn(e) {

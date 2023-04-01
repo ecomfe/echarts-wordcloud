@@ -249,7 +249,7 @@ var WordCloud = function WordCloud(elements, options) {
     hover: null,
     click: null,
 
-	  randomSeed: null
+    randomSeed: null
   };
 
   if (options) {
