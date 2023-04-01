@@ -101,6 +101,10 @@ chart.setOption({
         // NOTE disable it will lead to UI blocking when there is lots of words.
         layoutAnimation: true,
 
+        // Set to any string to set the seed for the random word placement
+        // and get consistent results
+        randomSeed: null,
+
         // Global text style
         textStyle: {
             fontFamily: 'sans-serif',
