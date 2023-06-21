@@ -53,6 +53,7 @@ function updateCanvasMask(maskCanvas) {
 }
 
 echarts.registerLayout(function (ecModel, api) {
+  var canvas = document.createElement('canvas');
   ecModel.eachSeriesByType('wordCloud', function (seriesModel) {
     var gridRect = echarts.helper.getLayoutRect(
       seriesModel.getBoxLayoutParams(),
@@ -69,7 +70,6 @@ echarts.registerLayout(function (ecModel, api) {
 
     var data = seriesModel.getData();
 
-    var canvas = document.createElement('canvas');
     canvas.width = gridRect.width;
     canvas.height = gridRect.height;
 
