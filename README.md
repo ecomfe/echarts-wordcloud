@@ -145,3 +145,7 @@ chart.setOption({
 - [feature] Add `keepAspect` option to keep aspect ratio of maskImage or 1:1 for shapes
 - [feature] Add `drawOutOfBound` option to allow words to be drawn partly outside of the canvas
 - [feature] Add `shrinkToFit` option to shrink the text if the font size is too large for the text to be displayed
+
+## Notice
+
+The Apache Software Foundation [Apache ECharts, ECharts](https://echarts.apache.org/), Apache, the Apache feather, and the Apache ECharts project logo are either registered trademarks or trademarks of the [Apache Software Foundation](https://www.apache.org/).
