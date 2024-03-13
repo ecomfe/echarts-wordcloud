@@ -8,6 +8,8 @@
 
 'use strict';
 
+import seedrandom from 'seedrandom'
+
 // setImmediate
 if (!window.setImmediate) {
   window.setImmediate = (function setupSetImmediate() {
@@ -169,9 +171,9 @@ var getItemExtraData = function (item) {
 };
 
 // Based on http://jsfromhell.com/array/shuffle
-var shuffleArray = function shuffleArray(arr) {
+var shuffleArray = function shuffleArray(arr, random) {
   for (var j, x, i = arr.length; i; ) {
-    j = Math.floor(Math.random() * i);
+    j = Math.floor(random() * i);
     x = arr[--i];
     arr[i] = arr[j];
     arr[j] = x;
@@ -245,7 +247,9 @@ var WordCloud = function WordCloud(elements, options) {
     classes: null,
 
     hover: null,
-    click: null
+    click: null,
+
+    randomSeed: null
   };
 
   if (options) {
@@ -371,6 +375,8 @@ var WordCloud = function WordCloud(elements, options) {
   var minRotation = Math.min(settings.maxRotation, settings.minRotation);
   var rotationStep = settings.rotationStep;
 
+  var random = settings.randomSeed == null ? Math.random : seedrandom(settings.randomSeed.toString());
+
   /* information/object available to all functions, set when start() */
   var grid, // 2d array containing filling information
     ngx,
@@ -386,11 +392,11 @@ var WordCloud = function WordCloud(elements, options) {
   function randomHslColor(min, max) {
     return (
       'hsl(' +
-      (Math.random() * 360).toFixed() +
+      (random() * 360).toFixed() +
       ',' +
-      (Math.random() * 30 + 70).toFixed() +
+      (random() * 30 + 70).toFixed() +
       '%,' +
-      (Math.random() * (max - min) + min).toFixed() +
+      (random() * (max - min) + min).toFixed() +
       '%)'
     );
   }
@@ -538,7 +544,7 @@ var WordCloud = function WordCloud(elements, options) {
       return 0;
     }
 
-    if (Math.random() > settings.rotateRatio) {
+    if (random() > settings.rotateRatio) {
       return 0;
     }
 
@@ -546,7 +552,7 @@ var WordCloud = function WordCloud(elements, options) {
       return minRotation;
     }
 
-    return minRotation + Math.round(Math.random() * rotationRange / rotationStep) * rotationStep;
+    return minRotation + Math.round(random() * rotationRange / rotationStep) * rotationStep;
   };
 
   var getTextInfo = function getTextInfo(
@@ -1068,7 +1074,7 @@ var WordCloud = function WordCloud(elements, options) {
 
       if (settings.shuffle) {
         points = [].concat(points);
-        shuffleArray(points);
+        shuffleArray(points, random);
       }
 
       // Try to fit the words by looking at each point.
