@@ -8,8 +8,14 @@
 
 'use strict';
 
+const canUseDOM = !!(
+  typeof window !== 'undefined'
+  && window.document
+  && window.document.createElement
+);
+
 // setImmediate
-if (!window.setImmediate) {
+if (canUseDOM && !window.setImmediate) {
   window.setImmediate = (function setupSetImmediate() {
     return (
       window.msSetImmediate ||
@@ -80,7 +86,7 @@ if (!window.setImmediate) {
   })();
 }
 
-if (!window.clearImmediate) {
+if (canUseDOM && !window.clearImmediate) {
   window.clearImmediate = (function setupClearImmediate() {
     return (
       window.msClearImmediate ||
@@ -98,6 +104,9 @@ if (!window.clearImmediate) {
 
 // Check if WordCloud can run on this browser
 var isSupported = (function isSupported() {
+  if (!canUseDOM) {
+    return true;
+  }
   var canvas = document.createElement('canvas');
   if (!canvas || !canvas.getContext) {
     return false;
@@ -127,6 +136,9 @@ var isSupported = (function isSupported() {
 // Find out if the browser impose minium font size by
 // drawing small texts on a canvas and measure it's width.
 var minFontSize = (function getMinFontSize() {
+  if (!canUseDOM) {
+    return;
+  }
   if (!isSupported) {
     return;
   }
