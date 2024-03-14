@@ -81,6 +81,10 @@ chart.setOption({
         rotationRange: [-90, 90],
         rotationStep: 45,
 
+        // Dimensions can be used to define dimension info for series.data.
+
+        dimensions: ['value'],
+
         // size of the grid in pixels for marking the availability of the canvas
         // the larger the grid size, the bigger the gap between words.
 
