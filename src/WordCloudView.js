@@ -21,6 +21,7 @@ echarts.extendChartView({
         scaleY: 1 / drawn.info.mu,
         x: (drawn.gx + drawn.info.gw / 2) * gridSize,
         y: (drawn.gy + drawn.info.gh / 2) * gridSize,
+        z: 100,
         rotation: drawn.rot
       });
       textEl.setStyle({

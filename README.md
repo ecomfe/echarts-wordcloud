@@ -22,6 +22,8 @@ Or
 ```shell
 npm install echarts
 npm install echarts-wordcloud
+
+export NODE_OPTIONS=--openssl-legacy-provider
 ```
 
 ```js

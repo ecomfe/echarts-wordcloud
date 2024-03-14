@@ -228,6 +228,8 @@ var WordCloud = function WordCloud(elements, options) {
 
     layoutAnimation: true,
 
+    z:10,
+
     wait: 0,
     abortThreshold: 0, // disabled
     abort: function noop() {},
@@ -874,6 +876,7 @@ var WordCloud = function WordCloud(elements, options) {
         var span = document.createElement('span');
         var transformRule = '';
         transformRule = 'rotate(' + (-rotateDeg / Math.PI) * 180 + 'deg) ';
+        transformRule += 'translateZ(100px) ';
         if (info.mu !== 1) {
           transformRule +=
             'translateX(-' +
